@@ -12,8 +12,9 @@ search:
 keywords:
   include:
     - "composite solid electrolyte"
+    - "composite electrolyte"
+    - "Organic−Inorganic Composite Electrolytes"
     - "polymer solid electrolyte"
-    - "solid polymer electrolyte"
     - "composite polymer electrolyte"
     - "lithium-ion conduction mechanism"
     - "lithium ion transport"
@@ -47,7 +48,9 @@ venues:
     - "Advanced Materials"
     - "Advanced Energy Materials"
     - "Advanced Functional Materials"
+    - "Journal of the American Chemical Society"
     - "ACS Energy Letters"
+    - "ACS Nano"
     - "Energy Storage Materials"
     - "Nano Energy"
     - "Chemistry of Materials"
@@ -65,9 +68,8 @@ ranking:
   weight_recency: 0.1
   weight_citation_signal: 0.10
   doctoral_boost_terms:
-    - "PEO"
-    - "LiTFSI"
-    - "lithium salt"
+    - "lithium-ion conduction mechanism"
+    - "lithium ion transport"
     - "ceramic filler surface"
     - "dielectric constant"
     - "Li+ coordination"

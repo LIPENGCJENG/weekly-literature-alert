@@ -1,0 +1,1 @@
+"""Weekly literature alert package."""

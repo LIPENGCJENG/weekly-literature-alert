@@ -1,0 +1,91 @@
+profile:
+  name: "Tao"
+  email_to: "tao.zeng@studenti.unipd.it"
+
+search:
+  days_back: 10
+  max_results_per_source: 80
+  top_n: 10
+  request_timeout: 20
+  retry_attempts: 2
+
+keywords:
+  include:
+    - "composite solid electrolyte"
+    - "polymer solid electrolyte"
+    - "solid polymer electrolyte"
+    - "composite polymer electrolyte"
+    - "lithium-ion conduction mechanism"
+    - "lithium ion transport"
+    - "ceramic filler"
+    - "polymer ceramic interface"
+    - "space charge layer"
+    - "PEO LiTFSI"
+    - "polymer-ceramic composite electrolyte"
+    - "interfacial ion transport"
+    - "inert ceramic filler"
+    - "active ceramic filler"
+
+  exclude:
+    - "sodium ion"
+    - "aqueous electrolyte"
+    - "supercapacitor"
+    - "fuel cell"
+    - "liquid electrolyte"
+    - "water-in-salt"
+    - "proton exchange membrane"
+
+venues:
+  whitelist:
+    - "Nature"
+    - "Science"
+    - "Nature Energy"
+    - "Nature Materials"
+    - "Nature Nanotechnology"
+    - "Joule"
+    - "Energy & Environmental Science"
+    - "Advanced Materials"
+    - "Advanced Energy Materials"
+    - "Advanced Functional Materials"
+    - "ACS Energy Letters"
+    - "Energy Storage Materials"
+    - "Nano Energy"
+    - "Chemistry of Materials"
+    - "Journal of Materials Chemistry A"
+    - "Journal of Power Sources"
+    - "Solid State Ionics"
+    - "Electrochimica Acta"
+    - "ACS Applied Materials & Interfaces"
+    - "Small"
+    - "Advanced Science"
+
+ranking:
+  weight_relevance: 0.5
+  weight_venue: 0.30
+  weight_recency: 0.1
+  weight_citation_signal: 0.10
+  doctoral_boost_terms:
+    - "PEO"
+    - "LiTFSI"
+    - "lithium salt"
+    - "ceramic filler surface"
+    - "dielectric constant"
+    - "Li+ coordination"
+    - "polymer crystallinity"
+    - "space charge layer"
+    - "fast ion-conducting interphase"
+    - "molecular dynamics"
+    - "first-principles"
+    - "DFT"
+    - "in situ"
+    - "operando"
+
+email:
+  subject_prefix: "[每周文献推送]"
+  language: "Chinese"
+  smtp_port: 587
+  use_tls: true
+
+openai:
+  model: "gpt-4.1-mini"
+  enable_if_key_present: true

@@ -78,6 +78,8 @@ python src/main.py
 - `weekly_report_YYYY-MM-DD.md`
 - `weekly_report_YYYY-MM-DD.html`
 
+邮件和报告末尾会附带运行报告，列出各数据库的 API 调用状态和检索结果条数。
+
 ## 邮件配置
 
 本地运行可以在终端中设置环境变量：

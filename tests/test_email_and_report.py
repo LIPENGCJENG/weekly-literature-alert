@@ -27,6 +27,18 @@ def test_email_body_generation():
         config,
         report_date=date(2026, 6, 16),
         total_found=1,
+        run_report={
+            "start_date": "2026-06-06",
+            "end_date": "2026-06-16",
+            "raw_count": 12,
+            "unique_count": 10,
+            "unseen_count": 8,
+            "selected_count": 1,
+            "sources": [
+                {"source": "OpenAlex", "status": "成功", "returned_count": 7, "note": "API 已成功调用"},
+                {"source": "Semantic Scholar", "status": "未调用", "returned_count": 0, "note": "缺少 SEMANTIC_SCHOLAR_API_KEY"},
+            ],
+        },
     )
     html = markdown_to_html(markdown_report)
     message = build_email_message(html, config, report_date=date(2026, 6, 16), markdown_body=markdown_report)
@@ -39,6 +51,10 @@ def test_email_body_generation():
     assert "### 2. 它声称的贡献是什么？" in markdown_report
     assert "A PEO based composite solid electrolyte is studied." not in markdown_report
     assert "它试图解决的是" in markdown_report
+    assert "## 运行报告" in markdown_report
+    assert "| OpenAlex | 成功 | 7 | API 已成功调用 |" in markdown_report
+    assert "| Semantic Scholar | 未调用 | 0 | 缺少 SEMANTIC_SCHOLAR_API_KEY |" in markdown_report
+    assert "运行报告" in html
     assert "2026-06-16" in message["Subject"]
     assert message.is_multipart()
 

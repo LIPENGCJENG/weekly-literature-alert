@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Callable
@@ -16,6 +17,13 @@ from summarize_papers import markdown_to_html, render_markdown_report, save_repo
 
 LOGGER = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SearchFunction = Callable[[dict[str, Any], date, date], list[dict[str, Any]]]
+SOURCE_DEFINITIONS: list[dict[str, Any]] = [
+    {"name": "OpenAlex", "func": search_openalex},
+    {"name": "Crossref", "func": search_crossref},
+    {"name": "Semantic Scholar", "func": search_semantic_scholar, "required_env": "SEMANTIC_SCHOLAR_API_KEY"},
+    {"name": "Elsevier Scopus", "func": search_elsevier, "required_env": "ELSEVIER_API_KEY"},
+]
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -23,22 +31,47 @@ def load_config(path: Path) -> dict[str, Any]:
         return yaml.safe_load(handle) or {}
 
 
-def search_all_sources(config: dict[str, Any], start_date: date, end_date: date) -> list[dict[str, Any]]:
-    sources: list[Callable[[dict[str, Any], date, date], list[dict[str, Any]]]] = [
-        search_openalex,
-        search_crossref,
-        search_semantic_scholar,
-        search_elsevier,
-    ]
+def search_all_sources(config: dict[str, Any], start_date: date, end_date: date) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     papers: list[dict[str, Any]] = []
-    for search_func in sources:
+    source_stats: list[dict[str, Any]] = []
+    for source in SOURCE_DEFINITIONS:
+        source_name = source["name"]
+        search_func: SearchFunction = source["func"]
+        required_env = source.get("required_env")
+        if required_env and not os.getenv(required_env):
+            LOGGER.info("%s was not called because %s is not set.", source_name, required_env)
+            source_stats.append(
+                {
+                    "source": source_name,
+                    "status": "未调用",
+                    "returned_count": 0,
+                    "note": f"缺少 {required_env}",
+                }
+            )
+            continue
         try:
             source_results = search_func(config, start_date, end_date)
             LOGGER.info("%s returned %d papers", search_func.__name__, len(source_results))
             papers.extend(source_results)
+            source_stats.append(
+                {
+                    "source": source_name,
+                    "status": "成功",
+                    "returned_count": len(source_results),
+                    "note": "API 已成功调用",
+                }
+            )
         except Exception as exc:
             LOGGER.exception("%s failed and was skipped: %s", search_func.__name__, exc)
-    return papers
+            source_stats.append(
+                {
+                    "source": source_name,
+                    "status": "失败",
+                    "returned_count": 0,
+                    "note": str(exc),
+                }
+            )
+    return papers, source_stats
 
 
 def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
@@ -51,14 +84,29 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
     report_dir = PROJECT_ROOT / "reports"
 
     LOGGER.info("Searching papers from %s to %s", start_date, today)
-    raw_papers = search_all_sources(config, start_date, today)
+    raw_papers, source_stats = search_all_sources(config, start_date, today)
     unique_papers = deduplicate_papers(raw_papers)
     seen = load_seen(seen_path)
     unseen_papers = filter_seen(unique_papers, seen)
     ranked = rank_papers(unseen_papers, config, end_date=today)
     selected = ranked[:top_n]
+    run_report = {
+        "start_date": start_date.isoformat(),
+        "end_date": today.isoformat(),
+        "raw_count": len(raw_papers),
+        "unique_count": len(unique_papers),
+        "unseen_count": len(unseen_papers),
+        "selected_count": len(selected),
+        "sources": source_stats,
+    }
 
-    markdown_report = render_markdown_report(selected, config, report_date=today, total_found=len(unique_papers))
+    markdown_report = render_markdown_report(
+        selected,
+        config,
+        report_date=today,
+        total_found=len(unique_papers),
+        run_report=run_report,
+    )
     latest_md, latest_html = save_reports(markdown_report, report_dir, report_date=today)
     html_report = markdown_to_html(markdown_report)
     sent = False if dry_run else send_email(html_report, config, report_date=today, markdown_body=markdown_report)
@@ -72,6 +120,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         "raw_count": len(raw_papers),
         "unique_count": len(unique_papers),
         "selected_count": len(selected),
+        "source_stats": source_stats,
         "report_markdown": str(latest_md),
         "report_html": str(latest_html),
         "email_sent": sent,

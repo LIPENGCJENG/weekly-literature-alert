@@ -231,6 +231,7 @@ def render_markdown_report(
     config: dict[str, Any],
     report_date: date | None = None,
     total_found: int | None = None,
+    run_report: dict[str, Any] | None = None,
 ) -> str:
     report_date = report_date or date.today()
     total_found = total_found if total_found is not None else len(papers)
@@ -245,6 +246,7 @@ def render_markdown_report(
 
     if not papers:
         lines.extend(["本周未筛选到足够相关的新论文。", ""])
+        _append_run_report(lines, run_report)
         return "\n".join(lines)
 
     for index, paper in enumerate(papers, start=1):
@@ -270,7 +272,37 @@ def render_markdown_report(
                 "",
             ]
         )
+    _append_run_report(lines, run_report)
     return "\n".join(lines)
+
+
+def _append_run_report(lines: list[str], run_report: dict[str, Any] | None) -> None:
+    if not run_report:
+        return
+    lines.extend(
+        [
+            "## 运行报告",
+            "",
+            f"**检索时间范围**：{run_report.get('start_date', '未知')} 至 {run_report.get('end_date', '未知')}",
+            f"**原始检索结果**：{run_report.get('raw_count', 0)} 条",
+            f"**去重后结果**：{run_report.get('unique_count', 0)} 条",
+            f"**未推送过结果**：{run_report.get('unseen_count', 0)} 条",
+            f"**本次推荐结果**：{run_report.get('selected_count', 0)} 条",
+            "",
+            "| 数据库 | API 调用状态 | 检索结果数 | 备注 |",
+            "| --- | --- | ---: | --- |",
+        ]
+    )
+    for source in run_report.get("sources", []):
+        lines.append(
+            "| {source} | {status} | {count} | {note} |".format(
+                source=str(source.get("source", "未知")).replace("|", "\\|"),
+                status=str(source.get("status", "未知")).replace("|", "\\|"),
+                count=int(source.get("returned_count", 0) or 0),
+                note=str(source.get("note", "")).replace("|", "\\|"),
+            )
+        )
+    lines.append("")
 
 
 def markdown_to_html(markdown_text: str) -> str:

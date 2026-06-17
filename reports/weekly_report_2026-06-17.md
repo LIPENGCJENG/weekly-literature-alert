@@ -16,7 +16,7 @@
 
 | 数据库 | API 调用状态 | 检索结果数 | 备注 |
 | --- | --- | ---: | --- |
-| OpenAlex | 成功 | 57 | API 已成功调用 |
-| Crossref | 成功 | 44 | API 已成功调用 |
-| Semantic Scholar | 成功 | 0 | API 已成功调用 |
-| Elsevier Scopus | 成功 | 0 | API 已成功调用 |
+| OpenAlex | 成功 | 57 | API 已成功调用，12 次成功 |
+| Crossref | 成功 | 44 | API 已成功调用，12 次成功 |
+| Semantic Scholar | 部分成功 | 0 | API 已调用，6 次成功，6 次失败 |
+| Elsevier Scopus | 成功 | 0 | API 已成功调用，12 次成功 |

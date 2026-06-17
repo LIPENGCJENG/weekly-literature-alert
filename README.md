@@ -8,7 +8,7 @@
 - 陶瓷填料界面效应
 - 聚合物-陶瓷界面与空间电荷层
 
-工作流会从 OpenAlex、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
+工作流会从 OpenAlex、Crossref、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
 
 ## 项目结构
 
@@ -20,6 +20,7 @@ weekly-literature-alert/
 ├── src/
 │   ├── main.py
 │   ├── search_openalex.py
+│   ├── search_crossref.py
 │   ├── search_semantic_scholar.py
 │   ├── search_elsevier.py
 │   ├── rank_papers.py

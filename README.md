@@ -105,7 +105,7 @@ export EMAIL_TO="your_email@example.com"
 - `SMTP_USER`
 - `SMTP_PASSWORD`
 - `EMAIL_TO`
-- `GEMINI_API_KEY`，可选，用于增强中文总结
+- `GEMINI_API_KEY`，可选，用于增强论文问题和贡献分析
 - `SEMANTIC_SCHOLAR_API_KEY`，用于启用 Semantic Scholar 检索。程序会按官方要求通过 `x-api-key` 请求头发送，并默认限制为每秒最多 1 次请求。
 - `ELSEVIER_API_KEY`，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
 
@@ -202,8 +202,8 @@ pytest -q
 
 ## 大模型总结
 
-没有 `GEMINI_API_KEY` 时，程序会使用规则生成中文总结和博士课题启发。
+没有 `GEMINI_API_KEY` 时，程序会使用规则回答“它真正想解决的问题是什么？”和“它声称的贡献是什么？”。
 
-配置 `GEMINI_API_KEY` 后，程序会尝试调用 Gemini API 增强总结。如果调用失败，不会中断工作流，会自动回退到基础报告。
+配置 `GEMINI_API_KEY` 后，程序会尝试调用 Gemini API 增强问题和贡献分析。如果调用失败，不会中断工作流，会自动回退到基础报告。
 
 默认模型在 `config.yaml` 中配置为 `gemini-3.1-flash-lite`。

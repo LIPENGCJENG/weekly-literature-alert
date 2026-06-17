@@ -147,20 +147,29 @@ def _rule_based_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[s
     topic = "、".join(topic_terms[:5]) or "复合固态电解质与锂离子传输"
     signals = "、".join(_summary_signals(paper)[:5])
     if paper.get("abstract"):
-        summary = (
-            f"根据题名和摘要信息，该论文主要关注{topic}。"
-            f"摘要中可识别的研究重点包括{signals or '材料体系设计、性能评估和机理分析'}。"
-            "整体来看，文章可作为近期跟踪该方向材料设计与离子传输机制的文献线索。"
+        problem = (
+            f"它试图解决的是{topic}相关体系中的关键限制。"
+            f"从题名和摘要看，问题集中在{signals or '材料体系设计、性能评估和机理解释'}。"
+            "这些信息提示作者关注的是材料结构、界面行为与离子传输表现之间如何建立更清楚的联系。"
+        )
+        contribution = (
+            f"它声称的贡献是提出或验证了一个围绕{topic}的材料设计、表征或机理分析方案，"
+            f"并用{signals or '性能数据和结构分析'}支撑该方案的有效性。"
+            "具体贡献仍建议结合全文核对实验条件、对照组和机理证据强度。"
         )
     else:
-        summary = (
+        problem = (
             "当前公开 API 未返回完整摘要。"
             f"根据题名、期刊和元数据信息判断，该论文主要关注{topic}，"
-            "建议后续阅读全文核对材料体系、实验条件和关键机理。"
+            "它想解决的问题需要通过阅读全文进一步确认。"
+        )
+        contribution = (
+            "由于缺少摘要，暂时只能判断它可能声称在材料设计、性能提升或机理解释上有所推进。"
+            "建议后续阅读全文核对作者真正提出的新方法、新证据或新机制。"
         )
     return {
-        "summary": summary,
-        "inspiration": "可重点关注其对锂离子迁移路径、聚合物链段运动、填料表面作用、界面层结构以及实验/模拟协同解释机制的启发。",
+        "problem": problem,
+        "contribution": contribution,
     }
 
 
@@ -181,9 +190,10 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
         model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         prompt = (
-            "请用中文为下面论文生成两段内容，并用 JSON 返回，键名为 "
-            "summary, inspiration。summary 必须概括文章核心内容，不能直接粘贴英文摘要。"
-            "不要编造摘要中没有的信息。\n\n"
+            "请用中文分析下面论文，并只用 JSON 返回，键名为 problem, contribution。"
+            "problem 回答“它真正想解决的问题是什么？”，要指出论文试图处理的核心科学或工程问题。"
+            "contribution 回答“它声称的贡献是什么？”，要说明作者声称的新材料、新方法、新机制或新证据。"
+            "不要直接粘贴英文摘要，不要编造摘要中没有的信息。\n\n"
             f"标题：{paper.get('title')}\n"
             f"期刊：{paper.get('venue')}\n"
             f"日期：{paper.get('published_date')}\n"
@@ -206,7 +216,7 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
         parts = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
         text = "".join(part.get("text", "") for part in parts)
         payload = _json_from_model_text(text)
-        return {key: str(payload.get(key, "")) for key in ["summary", "inspiration"]}
+        return {key: str(payload.get(key, "")) for key in ["problem", "contribution"]}
     except (requests.RequestException, KeyError, IndexError, json.JSONDecodeError, TypeError) as exc:
         LOGGER.warning("Gemini summary failed for %r: %s", paper.get("title"), exc)
         return None
@@ -238,7 +248,7 @@ def render_markdown_report(
         return "\n".join(lines)
 
     for index, paper in enumerate(papers, start=1):
-        summary = summarize_paper(paper, config)
+        analysis = summarize_paper(paper, config)
         lines.extend(
             [
                 f"## {index}. {paper.get('title') or '未命名论文'}",
@@ -250,13 +260,13 @@ def render_markdown_report(
                 f"**链接**：{paper.get('url') or '无'}",
                 f"**相关性评分**：{paper.get('score', 0)}/10",
                 "",
-                "### 中文总结",
+                "### 1. 它真正想解决的问题是什么？",
                 "",
-                summary["summary"],
+                analysis["problem"],
                 "",
-                "### 对博士课题的启发",
+                "### 2. 它声称的贡献是什么？",
                 "",
-                summary["inspiration"],
+                analysis["contribution"],
                 "",
             ]
         )

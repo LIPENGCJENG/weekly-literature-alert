@@ -3,9 +3,10 @@ profile:
   email_to: "tao.zeng@studenti.unipd.it"
 
 search:
-  days_back: 10
+  days_back: 30
   max_results_per_source: 80
   top_n: 10
+  min_recommendations: 5
   request_timeout: 20
   retry_attempts: 2
   semantic_scholar_min_interval_seconds: 1.1
@@ -13,26 +14,46 @@ search:
 keywords:
   include:
     - "composite solid electrolyte"
+    - "solid-state electrolyte"
+    - "solid state electrolyte"
     - "composite electrolyte"
     - "Organic−Inorganic Composite Electrolytes"
+    - "polymer electrolyte"
+    - "polymer solid electrolyte"
+    - "solid polymer electrolyte"
     - "composite polymer electrolyte"
+    - "ceramic polymer electrolyte"
+    - "ceramic-polymer electrolyte"
+    - "organic inorganic composite solid electrolyte"
     - "lithium-ion conduction mechanism"
     - "lithium ion transport"
+    - "solid-state lithium battery"
+    - "solid-state lithium batteries"
+    - "all-solid-state lithium battery"
     - "ceramic filler"
     - "polymer ceramic interface"
+    - "PEO LiTFSI"
+    - "space charge layer"
     - "polymer-ceramic composite electrolyte"
+    - "polymer ceramic composite electrolyte"
     - "interfacial ion transport"
     - "inert ceramic filler"
     - "active ceramic filler"
 
   exclude:
+    - "sodium"
     - "sodium ion"
+    - "sodium metal"
     - "aqueous electrolyte"
     - "supercapacitor"
     - "fuel cell"
     - "liquid electrolyte"
     - "water-in-salt"
     - "proton exchange membrane"
+    - "rhenium"
+    - "perrhenate"
+    - "alloy electrolyte"
+    - "imprinting polymer"
 
 venues:
   whitelist:

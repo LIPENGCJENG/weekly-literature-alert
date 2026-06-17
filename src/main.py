@@ -7,7 +7,17 @@ from typing import Any, Callable
 
 import yaml
 
-from rank_papers import deduplicate_papers, filter_seen, load_seen, paper_fingerprint, rank_papers, save_seen
+from rank_papers import (
+    contains_term,
+    deduplicate_papers,
+    filter_seen,
+    load_seen,
+    normalize_text,
+    paper_fingerprint,
+    rank_papers,
+    save_seen,
+    score_paper,
+)
 from search_crossref import search_crossref
 from search_elsevier import search_elsevier
 from search_openalex import search_openalex
@@ -54,6 +64,99 @@ def _source_call_summary(search_func: SearchFunction, returned_count: int) -> di
     }
 
 
+def _has_excluded_topic(paper: dict[str, Any], config: dict[str, Any]) -> bool:
+    text = normalize_text(
+        " ".join(
+            [
+                paper.get("title", ""),
+                paper.get("abstract", ""),
+                " ".join(paper.get("keywords", []) or []),
+                paper.get("venue", ""),
+            ]
+        )
+    )
+    return any(contains_term(text, term) for term in config.get("keywords", {}).get("exclude", []))
+
+
+def _has_included_topic(paper: dict[str, Any], config: dict[str, Any]) -> bool:
+    text = normalize_text(
+        " ".join(
+            [
+                paper.get("title", ""),
+                paper.get("abstract", ""),
+                " ".join(paper.get("keywords", []) or []),
+                paper.get("venue", ""),
+            ]
+        )
+    )
+    return any(contains_term(text, term) for term in config.get("keywords", {}).get("include", []))
+
+
+def _has_domain_fallback_topic(paper: dict[str, Any]) -> bool:
+    text = normalize_text(
+        " ".join(
+            [
+                paper.get("title", ""),
+                paper.get("abstract", ""),
+                " ".join(paper.get("keywords", []) or []),
+                paper.get("venue", ""),
+            ]
+        )
+    )
+    has_electrolyte = contains_term(text, "electrolyte") or contains_term(text, "electrolytes")
+    has_battery_context = any(
+        contains_term(text, term)
+        for term in [
+            "lithium",
+            "li ion",
+            "li",
+            "battery",
+            "batteries",
+            "solid state",
+            "solid electrolyte",
+            "all solid state",
+        ]
+    )
+    return has_electrolyte and has_battery_context
+
+
+def select_papers(
+    unseen_papers: list[dict[str, Any]],
+    ranked_papers: list[dict[str, Any]],
+    config: dict[str, Any],
+    end_date: date,
+) -> list[dict[str, Any]]:
+    top_n = int(config.get("search", {}).get("top_n", 10))
+    min_recommendations = int(config.get("search", {}).get("min_recommendations", 0))
+    target_count = max(top_n, min_recommendations)
+    selected = [paper for paper in ranked_papers if not _has_excluded_topic(paper, config)][:target_count]
+    if len(selected) >= min_recommendations:
+        return selected
+
+    selected_ids = {paper_fingerprint(paper) for paper in selected}
+    fallback = []
+    for paper in unseen_papers:
+        if (
+            not paper.get("title")
+            or paper_fingerprint(paper) in selected_ids
+            or _has_excluded_topic(paper, config)
+            or not (_has_included_topic(paper, config) or _has_domain_fallback_topic(paper))
+        ):
+            continue
+        fallback.append(score_paper(paper, config, end_date=end_date))
+    fallback.sort(key=lambda paper: paper.get("score", 0), reverse=True)
+
+    for paper in fallback:
+        paper_id = paper_fingerprint(paper)
+        if paper_id in selected_ids:
+            continue
+        selected.append(paper)
+        selected_ids.add(paper_id)
+        if len(selected) >= min_recommendations:
+            break
+    return selected[:target_count]
+
+
 def search_all_sources(config: dict[str, Any], start_date: date, end_date: date) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     papers: list[dict[str, Any]] = []
     source_stats: list[dict[str, Any]] = []
@@ -94,7 +197,6 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
     config = load_config(config_path)
     today = date.today()
     days_back = int(config.get("search", {}).get("days_back", 10))
-    top_n = int(config.get("search", {}).get("top_n", 10))
     start_date = today - timedelta(days=days_back)
     seen_path = PROJECT_ROOT / "data" / "seen.json"
     report_dir = PROJECT_ROOT / "reports"
@@ -105,7 +207,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
     seen = load_seen(seen_path)
     unseen_papers = filter_seen(unique_papers, seen)
     ranked = rank_papers(unseen_papers, config, end_date=today)
-    selected = ranked[:top_n]
+    selected = select_papers(unseen_papers, ranked, config, end_date=today)
     run_report = {
         "start_date": start_date.isoformat(),
         "end_date": today.isoformat(),

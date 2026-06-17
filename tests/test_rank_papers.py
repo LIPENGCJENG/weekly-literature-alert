@@ -1,12 +1,13 @@
 from datetime import date
 
 from src.rank_papers import contains_term, deduplicate_papers, rank_papers, score_paper, title_similarity
+from src.main import select_papers
 
 
 CONFIG = {
     "search": {"days_back": 10},
     "keywords": {
-        "include": ["composite solid electrolyte", "ceramic filler", "PEO LiTFSI"],
+        "include": ["composite solid electrolyte", "solid polymer electrolyte", "ceramic filler", "PEO LiTFSI"],
         "exclude": ["aqueous electrolyte"],
     },
     "venues": {"whitelist": ["Energy Storage Materials", "Journal of Power Sources"]},
@@ -69,3 +70,34 @@ def test_scoring_prefers_relevant_high_quality_paper():
     }
     assert score_paper(relevant, CONFIG, end_date=date(2026, 6, 16))["score"] > score_paper(irrelevant, CONFIG, end_date=date(2026, 6, 16))["score"]
     assert rank_papers([irrelevant, relevant], CONFIG, end_date=date(2026, 6, 16))[0]["title"] == relevant["title"]
+
+
+def test_select_papers_can_supplement_to_minimum_without_excluded_topics():
+    config = {
+        **CONFIG,
+        "search": {"days_back": 30, "top_n": 10, "min_recommendations": 3},
+    }
+    relevant = {
+        "title": "Ceramic filler enhanced composite solid electrolyte",
+        "abstract": "Lithium ion transport is discussed.",
+        "venue": "Energy Storage Materials",
+        "published_date": "2026-06-15",
+    }
+    fallback = {
+        "title": "Solid polymer electrolyte materials for lithium batteries",
+        "abstract": "Mechanical and electrochemical properties of polymer electrolytes are reviewed.",
+        "venue": "Journal of Power Sources",
+        "published_date": "2026-06-14",
+    }
+    excluded = {
+        "title": "Aqueous electrolyte for supercapacitor",
+        "abstract": "Aqueous electrolyte device.",
+        "venue": "Journal of Power Sources",
+        "published_date": "2026-06-13",
+    }
+    ranked = rank_papers([relevant, fallback, excluded], config, end_date=date(2026, 6, 16))
+    selected = select_papers([relevant, fallback, excluded], ranked, config, end_date=date(2026, 6, 16))
+
+    assert len(selected) == 2
+    assert selected[0]["title"] == relevant["title"]
+    assert all("Aqueous" not in paper["title"] for paper in selected)

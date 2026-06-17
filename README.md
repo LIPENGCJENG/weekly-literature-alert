@@ -50,8 +50,9 @@ pip install -r requirements.txt
 重点修改这些字段：
 
 - `profile.email_to`：你的收件邮箱。本地运行时可写在这里，GitHub Actions 中建议用 `EMAIL_TO` Secret 覆盖。
-- `search.days_back`：默认检索最近 10 天。
+- `search.days_back`：默认检索最近 30 天。
 - `search.top_n`：每周推荐论文数量，默认 10。
+- `search.min_recommendations`：当候选池足够时，至少推荐的论文数量，默认 5。
 - `search.semantic_scholar_min_interval_seconds`：Semantic Scholar 请求间隔，默认 1.1 秒，用于满足每秒最多 1 次请求的限制。
 - `keywords.include`：检索和相关性评分关键词。
 - `keywords.exclude`：排除明显不相关主题。

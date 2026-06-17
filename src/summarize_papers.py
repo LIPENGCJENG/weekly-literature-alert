@@ -178,7 +178,7 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     if not api_key or not gemini_config.get("enable_if_key_present", True):
         return None
     try:
-        model = gemini_config.get("model", "gemini-2.0-flash")
+        model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         prompt = (
             "请用中文为下面论文生成两段内容，并用 JSON 返回，键名为 "

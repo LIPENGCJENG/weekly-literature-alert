@@ -1,7 +1,7 @@
 from datetime import date
 
 from src.send_email import build_email_message
-from src.summarize_papers import _json_from_model_text, markdown_to_html, render_markdown_report
+from src.summarize_papers import _gemini_summary, _json_from_model_text, markdown_to_html, render_markdown_report
 
 
 def test_email_body_generation():
@@ -47,3 +47,49 @@ def test_gemini_json_code_fence_parsing():
     )
     assert payload["summary"] == "中文总结"
     assert payload["inspiration"] == "博士课题启发"
+
+
+class FakeGeminiResponse:
+    def raise_for_status(self):
+        return None
+
+    def json(self):
+        return {
+            "candidates": [
+                {
+                    "content": {
+                        "parts": [
+                            {
+                                "text": '{"summary": "中文核心内容", "inspiration": "博士课题启发"}'
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
+
+
+def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
+    calls = {}
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls["url"] = url
+        calls["params"] = params
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    result = _gemini_summary(
+        {
+            "title": "Composite polymer electrolyte",
+            "venue": "Energy Storage Materials",
+            "published_date": "2026-06-17",
+            "abstract": "A ceramic filler regulates lithium ion transport.",
+        },
+        {"gemini": {"model": "gemini-3.1-flash-lite"}, "search": {"request_timeout": 5}},
+    )
+
+    assert result == {"summary": "中文核心内容", "inspiration": "博士课题启发"}
+    assert "models/gemini-3.1-flash-lite:generateContent" in calls["url"]
+    assert calls["params"] == {"key": "test-key"}

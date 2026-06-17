@@ -204,3 +204,5 @@ pytest -q
 没有 `GEMINI_API_KEY` 时，程序会使用规则生成中文总结和博士课题启发。
 
 配置 `GEMINI_API_KEY` 后，程序会尝试调用 Gemini API 增强总结。如果调用失败，不会中断工作流，会自动回退到基础报告。
+
+默认模型在 `config.yaml` 中配置为 `gemini-3.1-flash-lite`。

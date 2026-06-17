@@ -84,5 +84,5 @@ email:
   use_tls: true
 
 gemini:
-  model: "gemini-2.0-flash"
+  model: "gemini-3.1-flash-lite"
   enable_if_key_present: true

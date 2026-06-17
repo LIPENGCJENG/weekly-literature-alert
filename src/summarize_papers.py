@@ -1,4 +1,5 @@
 import html
+import json
 import logging
 import os
 import re
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import markdown
+import requests
 
 LOGGER = logging.getLogger(__name__)
 
@@ -162,13 +164,22 @@ def _rule_based_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[s
     }
 
 
-def _openai_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str] | None:
-    if not os.getenv("OPENAI_API_KEY") or not config.get("openai", {}).get("enable_if_key_present", True):
+def _json_from_model_text(text: str) -> dict[str, Any]:
+    text = text.strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?", "", text, flags=re.IGNORECASE).strip()
+        text = re.sub(r"```$", "", text).strip()
+    return json.loads(text)
+
+
+def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str] | None:
+    api_key = os.getenv("GEMINI_API_KEY", "")
+    gemini_config = config.get("gemini", {})
+    if not api_key or not gemini_config.get("enable_if_key_present", True):
         return None
     try:
-        from openai import OpenAI
-
-        client = OpenAI()
+        model = gemini_config.get("model", "gemini-2.0-flash")
+        endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         prompt = (
             "请用中文为下面论文生成两段内容，并用 JSON 返回，键名为 "
             "summary, inspiration。summary 必须概括文章核心内容，不能直接粘贴英文摘要。"
@@ -179,23 +190,30 @@ def _openai_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
             f"摘要：{paper.get('abstract')}\n"
             "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
         )
-        response = client.responses.create(
-            model=config.get("openai", {}).get("model", "gpt-4.1-mini"),
-            input=prompt,
-            temperature=0.2,
+        response = requests.post(
+            endpoint,
+            params={"key": api_key},
+            json={
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {
+                    "temperature": 0.2,
+                    "responseMimeType": "application/json",
+                },
+            },
+            timeout=config.get("search", {}).get("request_timeout", 20),
         )
-        text = response.output_text
-        import json
-
-        payload = json.loads(text)
+        response.raise_for_status()
+        parts = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
+        text = "".join(part.get("text", "") for part in parts)
+        payload = _json_from_model_text(text)
         return {key: str(payload.get(key, "")) for key in ["summary", "inspiration"]}
-    except Exception as exc:
-        LOGGER.warning("OpenAI summary failed for %r: %s", paper.get("title"), exc)
+    except (requests.RequestException, KeyError, IndexError, json.JSONDecodeError, TypeError) as exc:
+        LOGGER.warning("Gemini summary failed for %r: %s", paper.get("title"), exc)
         return None
 
 
 def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
-    return _openai_summary(paper, config) or _rule_based_summary(paper, config)
+    return _gemini_summary(paper, config) or _rule_based_summary(paper, config)
 
 
 def render_markdown_report(

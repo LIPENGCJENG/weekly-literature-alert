@@ -104,7 +104,7 @@ export EMAIL_TO="your_email@example.com"
 - `SMTP_USER`
 - `SMTP_PASSWORD`
 - `EMAIL_TO`
-- `OPENAI_API_KEY`，可选，用于增强中文总结
+- `GEMINI_API_KEY`，可选，用于增强中文总结
 - `SEMANTIC_SCHOLAR_API_KEY`，可选，可提高 Semantic Scholar API 稳定性
 - `ELSEVIER_API_KEY`，可选，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
 
@@ -201,6 +201,6 @@ pytest -q
 
 ## 大模型总结
 
-没有 `OPENAI_API_KEY` 时，程序会使用规则生成中文总结、推荐理由、研究关联和博士课题启发。
+没有 `GEMINI_API_KEY` 时，程序会使用规则生成中文总结和博士课题启发。
 
-配置 `OPENAI_API_KEY` 后，程序会尝试调用 OpenAI API 增强总结。如果调用失败，不会中断工作流，会自动回退到基础报告。
+配置 `GEMINI_API_KEY` 后，程序会尝试调用 Gemini API 增强总结。如果调用失败，不会中断工作流，会自动回退到基础报告。

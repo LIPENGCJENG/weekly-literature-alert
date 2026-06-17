@@ -1,7 +1,7 @@
 from datetime import date
 
 from src.send_email import build_email_message
-from src.summarize_papers import markdown_to_html, render_markdown_report
+from src.summarize_papers import _json_from_model_text, markdown_to_html, render_markdown_report
 
 
 def test_email_body_generation():
@@ -37,3 +37,13 @@ def test_email_body_generation():
     assert "该论文主要关注" in markdown_report
     assert "2026-06-16" in message["Subject"]
     assert message.is_multipart()
+
+
+def test_gemini_json_code_fence_parsing():
+    payload = _json_from_model_text(
+        """```json
+        {"summary": "中文总结", "inspiration": "博士课题启发"}
+        ```"""
+    )
+    assert payload["summary"] == "中文总结"
+    assert payload["inspiration"] == "博士课题启发"

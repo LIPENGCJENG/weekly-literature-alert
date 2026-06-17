@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from datetime import date
 from typing import Any
 
@@ -48,17 +49,26 @@ def search_semantic_scholar(
     session = session or requests.Session()
     timeout = config.get("search", {}).get("request_timeout", 20)
     max_results = int(config.get("search", {}).get("max_results_per_source", 80))
+    min_interval = float(config.get("search", {}).get("semantic_scholar_min_interval_seconds", 1.1))
     keywords = config.get("keywords", {}).get("include", [])
     api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY", "")
-    headers = {"x-api-key": api_key} if api_key else {}
+    if not api_key:
+        LOGGER.info("SEMANTIC_SCHOLAR_API_KEY is not set; skipping Semantic Scholar search.")
+        return []
+    headers = {"x-api-key": api_key}
     results: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
     per_query = max(5, min(25, max_results // max(1, len(keywords)) + 1))
+    last_request_at = 0.0
 
     for query in keywords:
         params = {"query": query, "limit": per_query, "fields": FIELDS}
         try:
+            elapsed = time.monotonic() - last_request_at
+            if elapsed < min_interval:
+                time.sleep(min_interval - elapsed)
             response = session.get(SEARCH_URL, params=params, headers=headers, timeout=timeout)
+            last_request_at = time.monotonic()
             response.raise_for_status()
             for paper in response.json().get("data", []):
                 published = paper.get("publicationDate") or str(paper.get("year") or "")

@@ -8,7 +8,7 @@
 - 陶瓷填料界面效应
 - 聚合物-陶瓷界面与空间电荷层
 
-工作流会从 OpenAlex、Semantic Scholar、Crossref、Elsevier Scopus 和 arXiv 检索最近若干天的新论文，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
+工作流会从 OpenAlex、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
 
 ## 项目结构
 
@@ -21,8 +21,7 @@ weekly-literature-alert/
 │   ├── main.py
 │   ├── search_openalex.py
 │   ├── search_semantic_scholar.py
-│   ├── search_crossref.py
-│   ├── search_arxiv.py
+│   ├── search_elsevier.py
 │   ├── rank_papers.py
 │   ├── summarize_papers.py
 │   └── send_email.py
@@ -52,6 +51,7 @@ pip install -r requirements.txt
 - `profile.email_to`：你的收件邮箱。本地运行时可写在这里，GitHub Actions 中建议用 `EMAIL_TO` Secret 覆盖。
 - `search.days_back`：默认检索最近 10 天。
 - `search.top_n`：每周推荐论文数量，默认 10。
+- `search.semantic_scholar_min_interval_seconds`：Semantic Scholar 请求间隔，默认 1.1 秒，用于满足每秒最多 1 次请求的限制。
 - `keywords.include`：检索和相关性评分关键词。
 - `keywords.exclude`：排除明显不相关主题。
 - `venues.whitelist`：高优先级期刊白名单。
@@ -105,8 +105,8 @@ export EMAIL_TO="your_email@example.com"
 - `SMTP_PASSWORD`
 - `EMAIL_TO`
 - `GEMINI_API_KEY`，可选，用于增强中文总结
-- `SEMANTIC_SCHOLAR_API_KEY`，可选，可提高 Semantic Scholar API 稳定性
-- `ELSEVIER_API_KEY`，可选，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
+- `SEMANTIC_SCHOLAR_API_KEY`，用于启用 Semantic Scholar 检索。程序会按官方要求通过 `x-api-key` 请求头发送，并默认限制为每秒最多 1 次请求。
+- `ELSEVIER_API_KEY`，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
 
 ## GitHub Actions 定时运行
 

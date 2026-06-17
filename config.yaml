@@ -8,6 +8,7 @@ search:
   top_n: 10
   request_timeout: 20
   retry_attempts: 2
+  semantic_scholar_min_interval_seconds: 1.1
 
 keywords:
   include:

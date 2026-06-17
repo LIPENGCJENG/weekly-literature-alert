@@ -7,8 +7,6 @@ from typing import Any, Callable
 import yaml
 
 from rank_papers import deduplicate_papers, filter_seen, load_seen, paper_fingerprint, rank_papers, save_seen
-from search_arxiv import search_arxiv
-from search_crossref import search_crossref
 from search_elsevier import search_elsevier
 from search_openalex import search_openalex
 from search_semantic_scholar import search_semantic_scholar
@@ -28,9 +26,7 @@ def search_all_sources(config: dict[str, Any], start_date: date, end_date: date)
     sources: list[Callable[[dict[str, Any], date, date], list[dict[str, Any]]]] = [
         search_openalex,
         search_semantic_scholar,
-        search_crossref,
         search_elsevier,
-        search_arxiv,
     ]
     papers: list[dict[str, Any]] = []
     for search_func in sources:

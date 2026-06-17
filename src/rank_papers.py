@@ -136,8 +136,6 @@ def _venue_score(venue: str, config: dict[str, Any]) -> float:
     for index, name in enumerate(whitelist):
         if normalize_text(name) in normalized_venue or normalized_venue in normalize_text(name):
             return max(0.65, 1.0 - index * 0.015)
-    if "arxiv" in normalized_venue:
-        return 0.45
     return 0.35
 
 

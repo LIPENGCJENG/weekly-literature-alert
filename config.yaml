@@ -15,14 +15,11 @@ keywords:
     - "composite solid electrolyte"
     - "composite electrolyte"
     - "Organic−Inorganic Composite Electrolytes"
-    - "polymer solid electrolyte"
     - "composite polymer electrolyte"
     - "lithium-ion conduction mechanism"
     - "lithium ion transport"
     - "ceramic filler"
     - "polymer ceramic interface"
-    - "space charge layer"
-    - "PEO LiTFSI"
     - "polymer-ceramic composite electrolyte"
     - "interfacial ion transport"
     - "inert ceramic filler"
@@ -71,7 +68,6 @@ ranking:
   doctoral_boost_terms:
     - "lithium-ion conduction mechanism"
     - "lithium ion transport"
-    - "ceramic filler surface"
     - "dielectric constant"
     - "Li+ coordination"
     - "polymer crystallinity"
@@ -80,8 +76,6 @@ ranking:
     - "molecular dynamics"
     - "first-principles"
     - "DFT"
-    - "in situ"
-    - "operando"
 
 email:
   subject_prefix: "[每周文献推送]"

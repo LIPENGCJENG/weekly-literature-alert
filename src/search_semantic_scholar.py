@@ -60,6 +60,15 @@ def search_semantic_scholar(
     seen_ids: set[str] = set()
     per_query = max(5, min(25, max_results // max(1, len(keywords)) + 1))
     last_request_at = 0.0
+    successful_requests = 0
+    failed_requests = 0
+
+    def finish() -> list[dict[str, Any]]:
+        search_semantic_scholar.last_status = {
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+        }
+        return results
 
     for query in keywords:
         params = {"query": query, "limit": per_query, "fields": FIELDS}
@@ -70,6 +79,7 @@ def search_semantic_scholar(
             response = session.get(SEARCH_URL, params=params, headers=headers, timeout=timeout)
             last_request_at = time.monotonic()
             response.raise_for_status()
+            successful_requests += 1
             for paper in response.json().get("data", []):
                 published = paper.get("publicationDate") or ""
                 if not published or not _in_date_window(published, start_date, end_date):
@@ -79,9 +89,11 @@ def search_semantic_scholar(
                     seen_ids.add(paper_id)
                     results.append(_normalize_paper(paper))
                 if len(results) >= max_results:
-                    return results
+                    return finish()
         except requests.RequestException as exc:
+            failed_requests += 1
             LOGGER.warning("Semantic Scholar query failed for %r: %s", query, exc)
         except ValueError as exc:
+            failed_requests += 1
             LOGGER.warning("Semantic Scholar returned invalid JSON for %r: %s", query, exc)
-    return results
+    return finish()

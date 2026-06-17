@@ -62,6 +62,15 @@ def search_elsevier(
     }
     results: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    successful_requests = 0
+    failed_requests = 0
+
+    def finish() -> list[dict[str, Any]]:
+        search_elsevier.last_status = {
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+        }
+        return results
 
     for query in keywords:
         params = {
@@ -87,6 +96,7 @@ def search_elsevier(
         try:
             response = session.get(SCOPUS_SEARCH_URL, params=params, headers=headers, timeout=timeout)
             response.raise_for_status()
+            successful_requests += 1
             entries = response.json().get("search-results", {}).get("entry", [])
             for entry in entries:
                 if not _in_date_window(entry.get("prism:coverDate", ""), start_date, end_date):
@@ -96,9 +106,11 @@ def search_elsevier(
                     seen_ids.add(entry_id)
                     results.append(_normalize_entry(entry))
                 if len(results) >= max_results:
-                    return results
+                    return finish()
         except requests.RequestException as exc:
+            failed_requests += 1
             LOGGER.warning("Elsevier Scopus query failed for %r: %s", query, exc)
         except ValueError as exc:
+            failed_requests += 1
             LOGGER.warning("Elsevier Scopus returned invalid JSON for %r: %s", query, exc)
-    return results
+    return finish()

@@ -31,6 +31,29 @@ def load_config(path: Path) -> dict[str, Any]:
         return yaml.safe_load(handle) or {}
 
 
+def _source_call_summary(search_func: SearchFunction, returned_count: int) -> dict[str, Any]:
+    metadata = getattr(search_func, "last_status", {}) or {}
+    successful_requests = int(metadata.get("successful_requests", 1) or 0)
+    failed_requests = int(metadata.get("failed_requests", 0) or 0)
+    if failed_requests and successful_requests:
+        return {
+            "status": "部分成功",
+            "returned_count": returned_count,
+            "note": f"API 已调用，{successful_requests} 次成功，{failed_requests} 次失败",
+        }
+    if failed_requests:
+        return {
+            "status": "失败",
+            "returned_count": returned_count,
+            "note": f"API 调用失败，{failed_requests} 次失败",
+        }
+    return {
+        "status": "成功",
+        "returned_count": returned_count,
+        "note": f"API 已成功调用，{successful_requests} 次成功",
+    }
+
+
 def search_all_sources(config: dict[str, Any], start_date: date, end_date: date) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     papers: list[dict[str, Any]] = []
     source_stats: list[dict[str, Any]] = []
@@ -53,14 +76,7 @@ def search_all_sources(config: dict[str, Any], start_date: date, end_date: date)
             source_results = search_func(config, start_date, end_date)
             LOGGER.info("%s returned %d papers", search_func.__name__, len(source_results))
             papers.extend(source_results)
-            source_stats.append(
-                {
-                    "source": source_name,
-                    "status": "成功",
-                    "returned_count": len(source_results),
-                    "note": "API 已成功调用",
-                }
-            )
+            source_stats.append({"source": source_name, **_source_call_summary(search_func, len(source_results))})
         except Exception as exc:
             LOGGER.exception("%s failed and was skipped: %s", search_func.__name__, exc)
             source_stats.append(

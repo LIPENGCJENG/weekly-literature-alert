@@ -62,6 +62,15 @@ def search_openalex(
     email = config.get("profile", {}).get("email_to")
     results: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    successful_requests = 0
+    failed_requests = 0
+
+    def finish() -> list[dict[str, Any]]:
+        search_openalex.last_status = {
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+        }
+        return results
 
     per_query = max(5, min(50, max_results // max(1, len(keywords)) + 1))
     for query in keywords:
@@ -76,15 +85,18 @@ def search_openalex(
         try:
             response = session.get(OPENALEX_URL, params=params, timeout=timeout)
             response.raise_for_status()
+            successful_requests += 1
             for work in response.json().get("results", []):
                 work_id = work.get("id") or work.get("doi") or work.get("title")
                 if work_id and work_id not in seen_ids:
                     seen_ids.add(work_id)
                     results.append(_normalize_work(work))
                 if len(results) >= max_results:
-                    return results
+                    return finish()
         except requests.RequestException as exc:
+            failed_requests += 1
             LOGGER.warning("OpenAlex query failed for %r: %s", query, exc)
         except ValueError as exc:
+            failed_requests += 1
             LOGGER.warning("OpenAlex returned invalid JSON for %r: %s", query, exc)
-    return results
+    return finish()

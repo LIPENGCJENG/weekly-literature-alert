@@ -64,6 +64,16 @@ def search_crossref(
     email = config.get("profile", {}).get("email_to", "")
     results: list[dict[str, Any]] = []
     seen_ids: set[str] = set()
+    successful_requests = 0
+    failed_requests = 0
+
+    def finish() -> list[dict[str, Any]]:
+        search_crossref.last_status = {
+            "successful_requests": successful_requests,
+            "failed_requests": failed_requests,
+        }
+        return results
+
     per_query = max(5, min(40, max_results // max(1, len(keywords)) + 1))
 
     for query in keywords:
@@ -79,15 +89,18 @@ def search_crossref(
         try:
             response = session.get(CROSSREF_URL, params=params, timeout=timeout)
             response.raise_for_status()
+            successful_requests += 1
             for item in response.json().get("message", {}).get("items", []):
                 item_id = item.get("DOI") or item.get("URL") or _first(item.get("title"))
                 if item_id and item_id not in seen_ids:
                     seen_ids.add(item_id)
                     results.append(_normalize_item(item))
                 if len(results) >= max_results:
-                    return results
+                    return finish()
         except requests.RequestException as exc:
+            failed_requests += 1
             LOGGER.warning("Crossref query failed for %r: %s", query, exc)
         except ValueError as exc:
+            failed_requests += 1
             LOGGER.warning("Crossref returned invalid JSON for %r: %s", query, exc)
-    return results
+    return finish()

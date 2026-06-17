@@ -22,6 +22,19 @@ class FakeResponse:
                     "citationCount": 5,
                     "influentialCitationCount": 1,
                     "fieldsOfStudy": ["Materials Science"],
+                },
+                {
+                    "paperId": "s2-old",
+                    "title": "Old composite solid electrolyte review",
+                    "authors": [{"name": "Old Author"}],
+                    "venue": "Energy Storage Materials",
+                    "year": 2021,
+                    "externalIds": {"DOI": "10.1000/old-s2-example"},
+                    "url": "https://www.semanticscholar.org/paper/s2-old",
+                    "abstract": "A year-only record should not be treated as a recent paper.",
+                    "citationCount": 100,
+                    "influentialCitationCount": 10,
+                    "fieldsOfStudy": ["Materials Science"],
                 }
             ]
         }
@@ -71,6 +84,7 @@ def test_semantic_scholar_search_uses_x_api_key_header(monkeypatch):
     assert len(results) == 1
     assert results[0]["source"] == "Semantic Scholar"
     assert results[0]["doi"] == "10.1000/s2-example"
+    assert all(result["paper_id"] != "s2-old" for result in results)
     assert results[0]["influential_citation_count"] == 1
     assert session.last_headers["x-api-key"] == "test-key"
     assert session.last_params["fields"]

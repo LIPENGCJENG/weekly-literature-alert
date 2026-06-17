@@ -71,8 +71,8 @@ def search_semantic_scholar(
             last_request_at = time.monotonic()
             response.raise_for_status()
             for paper in response.json().get("data", []):
-                published = paper.get("publicationDate") or str(paper.get("year") or "")
-                if paper.get("publicationDate") and not _in_date_window(published, start_date, end_date):
+                published = paper.get("publicationDate") or ""
+                if not published or not _in_date_window(published, start_date, end_date):
                     continue
                 paper_id = paper.get("paperId") or (paper.get("externalIds") or {}).get("DOI") or paper.get("title")
                 if paper_id and paper_id not in seen_ids:

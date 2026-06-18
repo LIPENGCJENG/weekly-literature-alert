@@ -219,3 +219,12 @@ pytest -q
 配置 `GEMINI_API_KEY` 后，程序会在最终推荐论文列表确定后，才调用 Gemini API 增强问题和贡献分析；候选论文池不会调用 Gemini。如果调用失败，不会中断工作流，会自动回退到基础报告。
 
 默认模型在 `config.yaml` 中配置为 `gemini-3.1-flash-lite`。
+
+为减少限流，`config.yaml` 中还可以调整：
+
+```yaml
+gemini:
+  min_interval_seconds: 15
+  retry_attempts: 2
+  retry_backoff_seconds: 30
+```

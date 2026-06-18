@@ -1,5 +1,7 @@
 from datetime import date
 
+import requests
+
 from src.send_email import build_email_message
 from src.summarize_papers import (
     _gemini_summary,
@@ -111,6 +113,14 @@ class FakeGeminiResponse:
         }
 
 
+class FakeRateLimitResponse:
+    status_code = 429
+    headers = {}
+
+    def raise_for_status(self):
+        raise requests.HTTPError("429 Client Error", response=self)
+
+
 def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     calls = {}
 
@@ -135,6 +145,35 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
     assert "models/gemini-3.1-flash-lite:generateContent" in calls["url"]
     assert calls["params"] == {"key": "test-key"}
+
+
+def test_gemini_summary_retries_rate_limit(monkeypatch):
+    calls = []
+    sleeps = []
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls.append(url)
+        return FakeRateLimitResponse() if len(calls) == 1 else FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+    monkeypatch.setattr("src.summarize_papers.time.sleep", sleeps.append)
+
+    result = _gemini_summary(
+        {"title": "Composite polymer electrolyte"},
+        {
+            "gemini": {
+                "model": "gemini-3.1-flash-lite",
+                "retry_attempts": 2,
+                "retry_backoff_seconds": 3,
+            },
+            "search": {"request_timeout": 5},
+        },
+    )
+
+    assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
+    assert len(calls) == 2
+    assert sleeps == [3]
 
 
 def test_render_report_does_not_call_gemini(monkeypatch):

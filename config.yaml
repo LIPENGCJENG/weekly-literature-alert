@@ -135,6 +135,9 @@ email:
 gemini:
   model: "gemini-3.1-flash-lite"
   enable_if_key_present: true
+  min_interval_seconds: 15
+  retry_attempts: 2
+  retry_backoff_seconds: 30
 
 easyscholar:
   min_interval_seconds: 0.2

@@ -3,6 +3,7 @@ import json
 import logging
 import os
 import re
+import time
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -194,6 +195,8 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     gemini_config = config.get("gemini", {})
     if not api_key or not gemini_config.get("enable_if_key_present", True):
         return None
+    retry_attempts = max(1, int(gemini_config.get("retry_attempts", 1)))
+    retry_backoff = max(0.0, float(gemini_config.get("retry_backoff_seconds", 20)))
     try:
         model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
@@ -209,26 +212,54 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
             f"摘要：{paper.get('abstract')}\n"
             "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
         )
-        response = requests.post(
-            endpoint,
-            params={"key": api_key},
-            json={
-                "contents": [{"parts": [{"text": prompt}]}],
-                "generationConfig": {
-                    "temperature": 0.2,
-                    "responseMimeType": "application/json",
-                },
-            },
-            timeout=config.get("search", {}).get("request_timeout", 20),
-        )
-        response.raise_for_status()
-        parts = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        text = "".join(part.get("text", "") for part in parts)
-        payload = _json_from_model_text(text)
-        return {key: str(payload.get(key, "")) for key in ["problem", "contribution"]}
+        for attempt in range(1, retry_attempts + 1):
+            try:
+                response = requests.post(
+                    endpoint,
+                    params={"key": api_key},
+                    json={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {
+                            "temperature": 0.2,
+                            "responseMimeType": "application/json",
+                        },
+                    },
+                    timeout=config.get("search", {}).get("request_timeout", 20),
+                )
+                response.raise_for_status()
+                parts = response.json().get("candidates", [{}])[0].get("content", {}).get("parts", [])
+                text = "".join(part.get("text", "") for part in parts)
+                payload = _json_from_model_text(text)
+                LOGGER.info("Gemini summary generated for %r", paper.get("title"))
+                return {key: str(payload.get(key, "")) for key in ["problem", "contribution"]}
+            except requests.HTTPError as exc:
+                status_code = exc.response.status_code if exc.response is not None else None
+                if status_code == 429 and attempt < retry_attempts:
+                    retry_after = exc.response.headers.get("Retry-After", "") if exc.response is not None else ""
+                    try:
+                        wait_seconds = float(retry_after)
+                    except ValueError:
+                        wait_seconds = retry_backoff * attempt
+                    LOGGER.warning(
+                        "Gemini rate limited for %r; retrying in %.1f seconds.",
+                        paper.get("title"),
+                        wait_seconds,
+                    )
+                    time.sleep(wait_seconds)
+                    continue
+                raise
     except (requests.RequestException, KeyError, IndexError, json.JSONDecodeError, TypeError) as exc:
         LOGGER.warning("Gemini summary failed for %r: %s", paper.get("title"), exc)
         return None
+
+
+def _gemini_is_enabled(config: dict[str, Any]) -> bool:
+    gemini_config = config.get("gemini", {})
+    return bool(os.getenv("GEMINI_API_KEY", "") and gemini_config.get("enable_if_key_present", True))
+
+
+def _gemini_min_interval(config: dict[str, Any]) -> float:
+    return max(0.0, float(config.get("gemini", {}).get("min_interval_seconds", 0)))
 
 
 def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
@@ -237,7 +268,10 @@ def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
 
 def enrich_papers_with_summaries(papers: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
     enriched: list[dict[str, Any]] = []
-    for paper in papers:
+    min_interval = _gemini_min_interval(config) if _gemini_is_enabled(config) else 0.0
+    for index, paper in enumerate(papers):
+        if index and min_interval:
+            time.sleep(min_interval)
         item = dict(paper)
         item["analysis"] = summarize_paper(item, config)
         enriched.append(item)

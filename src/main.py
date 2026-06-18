@@ -219,7 +219,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         )
         ranked_with_seen = rank_papers(unique_papers, config, end_date=today)
         selected = select_papers(unique_papers, ranked_with_seen, config, end_date=today)
-    selected = enrich_papers_with_summaries(selected, config)
+    selected, gemini_stats = enrich_papers_with_summaries(selected, config, include_stats=True)
     run_report = {
         "start_date": start_date.isoformat(),
         "end_date": today.isoformat(),
@@ -229,6 +229,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         "selected_count": len(selected),
         "sources": source_stats,
         "journal_metrics": journal_metrics_stats,
+        "gemini": gemini_stats,
     }
 
     markdown_report = render_markdown_report(

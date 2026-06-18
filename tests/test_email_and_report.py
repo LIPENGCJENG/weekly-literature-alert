@@ -56,6 +56,17 @@ def test_email_body_generation():
                 "matched_count": 1,
                 "note": "API 已调用，1 次成功，0 次失败；1 篇论文匹配到影响因子",
             },
+            "gemini": {
+                "source": "Gemini",
+                "status": "部分成功",
+                "attempted_count": 2,
+                "request_count": 3,
+                "success_count": 1,
+                "failed_count": 1,
+                "fallback_count": 1,
+                "rate_limited_count": 1,
+                "note": "Gemini 已启用；测试统计",
+            },
         },
     )
     html = markdown_to_html(markdown_report)
@@ -80,6 +91,8 @@ def test_email_body_generation():
     assert "| OpenAlex | 成功 | 7 | API 已成功调用 |" in markdown_report
     assert "| Semantic Scholar | 未调用 | 0 | 缺少 SEMANTIC_SCHOLAR_API_KEY |" in markdown_report
     assert "期刊指标查询" in markdown_report
+    assert "Gemini API 调用" in markdown_report
+    assert "尝试 2 篇，成功 1 篇，失败 1 篇，规则回退 1 篇" in markdown_report
     assert "运行报告" in html
     assert "2026-06-16" in message["Subject"]
     assert message.is_multipart()
@@ -234,3 +247,25 @@ def test_enrich_summaries_calls_gemini_only_for_given_final_papers(monkeypatch):
     assert all("analysis" in paper for paper in enriched)
     assert "https://doi.org/10.1000/one" in calls[0]
     assert "https://doi.org/10.1000/two" in calls[1]
+
+
+def test_enrich_summaries_returns_gemini_stats(monkeypatch):
+    def fake_post(url, params=None, json=None, timeout=None):
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    enriched, stats = enrich_papers_with_summaries(
+        [{"title": "Final selected paper", "doi": "10.1000/one"}],
+        {"gemini": {"model": "gemini-3.1-flash-lite"}, "search": {"request_timeout": 5}},
+        include_stats=True,
+    )
+
+    assert enriched[0]["analysis_source"] == "Gemini"
+    assert stats["status"] == "成功"
+    assert stats["attempted_count"] == 1
+    assert stats["request_count"] == 1
+    assert stats["success_count"] == 1
+    assert stats["failed_count"] == 0
+    assert stats["fallback_count"] == 0

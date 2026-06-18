@@ -200,7 +200,11 @@ def _doi_url(doi: str) -> str:
     return f"https://doi.org/{doi}"
 
 
-def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str] | None:
+def _gemini_summary(
+    paper: dict[str, Any],
+    config: dict[str, Any],
+    stats: dict[str, Any] | None = None,
+) -> dict[str, str] | None:
     api_key = os.getenv("GEMINI_API_KEY", "")
     gemini_config = config.get("gemini", {})
     if not api_key or not gemini_config.get("enable_if_key_present", True):
@@ -229,6 +233,8 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
         )
         for attempt in range(1, retry_attempts + 1):
             try:
+                if stats is not None:
+                    stats["request_count"] = int(stats.get("request_count", 0)) + 1
                 response = requests.post(
                     endpoint,
                     params={"key": api_key},
@@ -249,6 +255,8 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
                 return {key: str(payload.get(key, "")) for key in ["problem", "contribution", "conclusion"]}
             except requests.HTTPError as exc:
                 status_code = exc.response.status_code if exc.response is not None else None
+                if status_code == 429 and stats is not None:
+                    stats["rate_limited_count"] = int(stats.get("rate_limited_count", 0)) + 1
                 if status_code == 429 and attempt < retry_attempts:
                     retry_after = exc.response.headers.get("Retry-After", "") if exc.response is not None else ""
                     try:
@@ -281,15 +289,93 @@ def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     return _gemini_summary(paper, config) or _rule_based_summary(paper, config)
 
 
-def enrich_papers_with_summaries(papers: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+def _gemini_disabled_note(config: dict[str, Any]) -> str:
+    if not os.getenv("GEMINI_API_KEY", ""):
+        return "缺少 GEMINI_API_KEY，使用规则分析"
+    if not config.get("gemini", {}).get("enable_if_key_present", True):
+        return "Gemini 已在 config.yaml 中关闭，使用规则分析"
+    return "Gemini 未调用，使用规则分析"
+
+
+def _finalize_gemini_stats(stats: dict[str, Any]) -> dict[str, Any]:
+    attempted = int(stats.get("attempted_count", 0))
+    success = int(stats.get("success_count", 0))
+    failed = int(stats.get("failed_count", 0))
+    fallback = int(stats.get("fallback_count", 0))
+    requests_count = int(stats.get("request_count", 0))
+    rate_limited = int(stats.get("rate_limited_count", 0))
+
+    if attempted == 0:
+        stats["status"] = "未调用"
+        stats["note"] = stats.get("note") or "Gemini 未调用"
+    elif failed and success:
+        stats["status"] = "部分成功"
+        stats["note"] = (
+            f"Gemini 已启用；尝试分析 {attempted} 篇最终推荐论文，"
+            f"{success} 篇成功，{failed} 篇失败，回退 {fallback} 篇；"
+            f"HTTP 请求 {requests_count} 次，429 限流 {rate_limited} 次"
+        )
+    elif failed:
+        stats["status"] = "失败"
+        stats["note"] = (
+            f"Gemini 已启用；尝试分析 {attempted} 篇最终推荐论文，全部失败并回退规则分析；"
+            f"HTTP 请求 {requests_count} 次，429 限流 {rate_limited} 次"
+        )
+    else:
+        stats["status"] = "成功"
+        stats["note"] = (
+            f"Gemini 已启用；成功分析 {success} 篇最终推荐论文；"
+            f"HTTP 请求 {requests_count} 次，429 限流 {rate_limited} 次"
+        )
+    return stats
+
+
+def enrich_papers_with_summaries(
+    papers: list[dict[str, Any]],
+    config: dict[str, Any],
+    include_stats: bool = False,
+) -> list[dict[str, Any]] | tuple[list[dict[str, Any]], dict[str, Any]]:
     enriched: list[dict[str, Any]] = []
-    min_interval = _gemini_min_interval(config) if _gemini_is_enabled(config) else 0.0
+    gemini_enabled = _gemini_is_enabled(config)
+    min_interval = _gemini_min_interval(config) if gemini_enabled else 0.0
+    stats: dict[str, Any] = {
+        "source": "Gemini",
+        "status": "未调用",
+        "attempted_count": 0,
+        "request_count": 0,
+        "success_count": 0,
+        "failed_count": 0,
+        "fallback_count": 0,
+        "rate_limited_count": 0,
+        "note": "",
+    }
+    if not gemini_enabled:
+        stats["fallback_count"] = len(papers)
+        stats["note"] = _gemini_disabled_note(config)
+
     for index, paper in enumerate(papers):
         if index and min_interval:
             time.sleep(min_interval)
         item = dict(paper)
-        item["analysis"] = summarize_paper(item, config)
+        if gemini_enabled:
+            stats["attempted_count"] += 1
+            gemini_analysis = _gemini_summary(item, config, stats=stats)
+            if gemini_analysis:
+                stats["success_count"] += 1
+                item["analysis"] = gemini_analysis
+                item["analysis_source"] = "Gemini"
+            else:
+                stats["failed_count"] += 1
+                stats["fallback_count"] += 1
+                item["analysis"] = _rule_based_summary(item, config)
+                item["analysis_source"] = "规则回退"
+        else:
+            item["analysis"] = _rule_based_summary(item, config)
+            item["analysis_source"] = "规则回退"
         enriched.append(item)
+    stats = _finalize_gemini_stats(stats)
+    if include_stats:
+        return enriched, stats
     return enriched
 
 
@@ -423,6 +509,23 @@ def _append_run_report(lines: list[str], run_report: dict[str, Any] | None) -> N
                     queried=int(journal_metrics.get("queried_count", 0) or 0),
                     matched=int(journal_metrics.get("matched_count", 0) or 0),
                     note=str(journal_metrics.get("note", "")),
+                ),
+                "",
+            ]
+        )
+    gemini_stats = run_report.get("gemini") or {}
+    if gemini_stats:
+        lines.extend(
+            [
+                "**Gemini API 调用**：{status}；尝试 {attempted} 篇，成功 {success} 篇，失败 {failed} 篇，规则回退 {fallback} 篇；HTTP 请求 {requests} 次，429 限流 {rate_limited} 次。{note}".format(
+                    status=str(gemini_stats.get("status", "未知")),
+                    attempted=int(gemini_stats.get("attempted_count", 0) or 0),
+                    success=int(gemini_stats.get("success_count", 0) or 0),
+                    failed=int(gemini_stats.get("failed_count", 0) or 0),
+                    fallback=int(gemini_stats.get("fallback_count", 0) or 0),
+                    requests=int(gemini_stats.get("request_count", 0) or 0),
+                    rate_limited=int(gemini_stats.get("rate_limited_count", 0) or 0),
+                    note=str(gemini_stats.get("note", "")),
                 ),
                 "",
             ]

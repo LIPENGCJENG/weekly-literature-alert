@@ -81,7 +81,7 @@ python src/main.py
 - `weekly_report_YYYY-MM-DD.md`
 - `weekly_report_YYYY-MM-DD.html`
 
-邮件和报告末尾会附带运行报告，列出各数据库的 API 调用状态和检索结果条数。
+邮件和报告末尾会附带运行报告，列出各数据库的 API 调用状态、检索结果条数、EasyScholar 期刊指标查询情况，以及 Gemini API 的调用成功/失败和规则回退情况。
 
 ## 邮件配置
 

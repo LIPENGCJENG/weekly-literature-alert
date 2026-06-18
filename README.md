@@ -1,14 +1,16 @@
 # Weekly Literature Alert
 
-这是一个用于每周自动检索、筛选并邮件推送文献的 Python 工作流，主题聚焦：
+这是一个通用型每周最新文献播报程序。它可以根据你在 `config.yaml` 中配置的研究主题、关键词、排除词和期刊指标，自动检索最近一段时间的新论文，筛选出最值得关注的文献，生成中文 Markdown/HTML 报告，并通过邮件发送。
 
-- 复合固态电解质
-- 聚合物电解质
-- 锂离子传导机理
-- 陶瓷填料界面效应
-- 聚合物-陶瓷界面与空间电荷层
+适用场景包括：
 
-工作流会从 OpenAlex、Crossref、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，用 EasyScholar 查询 SCI 影响因子/JCR 分区，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
+- 每周跟踪某个研究方向的新论文；
+- 为课题组、项目或个人建立自动文献播报；
+- 从多个公开学术数据库汇总候选论文；
+- 按标题相关度和期刊影响因子进行初筛；
+- 自动生成中文阅读提示和运行报告。
+
+当前支持的检索和辅助信息来源包括 OpenAlex、Crossref、Semantic Scholar、Elsevier Scopus 和 EasyScholar。Gemini API 是可选项，用于对最终推荐论文生成更深入的审稿式问题分析。
 
 ## 项目结构
 
@@ -36,6 +38,18 @@ weekly-literature-alert/
         └── weekly-literature-alert.yml
 ```
 
+## 功能概览
+
+- 按关键词检索最近若干天的新论文；
+- 支持 OpenAlex、Crossref、Semantic Scholar 和 Elsevier Scopus；
+- 使用 EasyScholar 查询 SCI 影响因子和 JCR 分区；
+- 根据 DOI、URL 和标题相似度去重；
+- 使用 `data/seen.json` 避免重复推送；
+- 只对最终推荐论文调用 Gemini，避免对候选池浪费额度；
+- 生成 Markdown 和 HTML 两种报告；
+- 通过 SMTP 发送 HTML 邮件；
+- 在 GitHub Actions 中定时运行，并自动提交最新报告。
+
 ## 安装依赖
 
 ```bash
@@ -47,18 +61,93 @@ pip install -r requirements.txt
 
 ## 配置 config.yaml
 
-重点修改这些字段：
+核心配置都在 `config.yaml` 中。通常只需要修改以下几类字段。
 
-- `profile.email_to`：你的收件邮箱。本地运行时可写在这里，GitHub Actions 中建议用 `EMAIL_TO` Secret 覆盖。
-- `search.days_back`：默认检索最近 30 天。
-- `search.top_n`：每周推荐论文数量，默认 10。
-- `search.min_recommendations`：当候选池足够时，至少推荐的论文数量，默认 5。
-- `search.semantic_scholar_min_interval_seconds`：Semantic Scholar 请求间隔，默认 1.1 秒，用于满足每秒最多 1 次请求的限制。
-- `keywords.include`：检索和相关性评分关键词。
-- `keywords.exclude`：排除明显不相关主题。
-- `venues.impact_factors`：期刊影响因子备用表。当 EasyScholar 未配置或查询失败时，评分会使用这里的数值。
-- `ranking.weight_title_relevance` 和 `ranking.weight_impact_factor`：评分只由标题相关度和期刊影响因子组成。
-- `easyscholar.min_interval_seconds`：EasyScholar 期刊指标查询间隔，避免请求过密。
+### 用户信息
+
+```yaml
+profile:
+  name: "Your Name"
+  email_to: "your_email@example.com"
+```
+
+在 GitHub Actions 中，建议用 `EMAIL_TO` Secret 覆盖收件邮箱。
+
+### 检索范围
+
+```yaml
+search:
+  days_back: 30
+  max_results_per_source: 80
+  top_n: 10
+  min_recommendations: 5
+```
+
+- `days_back`：检索最近多少天的论文；
+- `max_results_per_source`：每个数据库最多返回多少候选论文；
+- `top_n`：报告中最多推荐多少篇；
+- `min_recommendations`：候选池足够时至少推荐多少篇。
+
+### 关键词
+
+```yaml
+keywords:
+  include:
+    - "your main research topic"
+    - "important method or material"
+    - "important mechanism"
+  exclude:
+    - "unrelated topic"
+    - "unwanted application"
+```
+
+`include` 用于检索和标题相关度评分。`exclude` 用于排除明显不相关的论文。你可以把这里替换成任何研究方向，例如医学、材料、AI、能源、环境、社会科学等。
+
+### 期刊影响因子备用表
+
+```yaml
+venues:
+  impact_factors:
+    Nature: 50.5
+    Science: 44.7
+    Example Journal: 8.0
+```
+
+程序会优先使用 EasyScholar 查询 SCI 影响因子和 JCR 分区。如果没有配置 `EASYSCHOLAR_SECRET_KEY`、接口失败或期刊未匹配，则使用这里的备用数值。
+
+### 评分权重
+
+```yaml
+ranking:
+  weight_title_relevance: 0.70
+  weight_impact_factor: 0.30
+  default_impact_factor: 1.0
+  max_impact_factor: 60.0
+```
+
+当前评分只使用两项：
+
+- 论文标题与 `keywords.include` 的相关度；
+- 期刊影响因子。
+
+### Gemini 分析
+
+```yaml
+gemini:
+  model: "gemini-3.1-flash-lite"
+  enable_if_key_present: true
+  min_interval_seconds: 15
+  retry_attempts: 2
+  retry_backoff_seconds: 30
+```
+
+配置 `GEMINI_API_KEY` 后，程序只会对最终推荐论文调用 Gemini。Gemini 会以严格审稿人的口吻回答：
+
+1. 它真正想解决的问题是什么？
+2. 它声称的贡献是什么？
+3. 它的主要结论是什么？
+
+如果 Gemini 调用失败，程序会自动回退到规则分析，不会中断邮件推送。
 
 ## 本地运行
 
@@ -74,18 +163,18 @@ python src/main.py --dry-run
 python src/main.py
 ```
 
-输出文件会保存在 `reports/`：
+输出文件保存在 `reports/`：
 
 - `weekly_report.md`
 - `weekly_report.html`
 - `weekly_report_YYYY-MM-DD.md`
 - `weekly_report_YYYY-MM-DD.html`
 
-邮件和报告末尾会附带运行报告，列出各数据库的 API 调用状态、检索结果条数、EasyScholar 期刊指标查询情况，以及 Gemini API 的调用成功/失败和规则回退情况。
+报告末尾会附带运行报告，包括各数据库检索结果、API 调用状态、EasyScholar 期刊指标查询情况，以及 Gemini API 的成功、失败、限流和规则回退情况。
 
 ## 邮件配置
 
-本地运行可以在终端中设置环境变量：
+本地运行可以设置以下环境变量：
 
 ```bash
 export SMTP_HOST="smtp.example.com"
@@ -110,55 +199,70 @@ export EMAIL_TO="your_email@example.com"
 - `SMTP_USER`
 - `SMTP_PASSWORD`
 - `EMAIL_TO`
-- `GEMINI_API_KEY`，可选，用于增强论文问题和贡献分析
-- `SEMANTIC_SCHOLAR_API_KEY`，用于启用 Semantic Scholar 检索。程序会按官方要求通过 `x-api-key` 请求头发送，并默认限制为每秒最多 1 次请求。
-- `ELSEVIER_API_KEY`，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
-- `EASYSCHOLAR_SECRET_KEY`，用于调用 EasyScholar 开放接口查询 SCI 影响因子和 JCR 分区。不要把 SecretKey 写入 `config.yaml` 或提交到仓库。
+- `GEMINI_API_KEY`，可选，用于增强最终推荐论文分析；
+- `SEMANTIC_SCHOLAR_API_KEY`，可选，用于启用 Semantic Scholar 检索；
+- `ELSEVIER_API_KEY`，可选，用于启用 Elsevier Scopus 检索；
+- `EASYSCHOLAR_SECRET_KEY`，可选，用于查询 SCI 影响因子和 JCR 分区。
+
+不要把任何 API Key、邮箱密码或 SecretKey 写入 `config.yaml` 或提交到仓库。
 
 ## GitHub Actions 定时运行
 
 工作流文件位于：
 
-`.github/workflows/weekly-literature-alert.yml`
+```text
+.github/workflows/weekly-literature-alert.yml
+```
 
-它会在每周一 Europe/Rome 时间上午 9 点附近运行。由于 GitHub cron 只支持 UTC，workflow 会在 07:00 和 08:00 UTC 各触发一次，并在任务开始时检查当前 Europe/Rome 时间，仅保留 09:00 的那次运行。
+默认配置为每周一 Europe/Rome 时间上午 9 点附近运行。由于 GitHub cron 只支持 UTC，workflow 会在 07:00 和 08:00 UTC 各触发一次，并在任务开始时检查 Europe/Rome 当前时间，只保留 09:00 的那次运行。
 
-也可以在 GitHub 页面手动触发：
+也可以手动触发：
 
 `Actions` → `Weekly Literature Alert` → `Run workflow`
 
-## 修改关键词
+运行完成后，workflow 会把更新后的 `reports/` 和 `data/seen.json` 自动提交回仓库。
 
-编辑 `config.yaml` 中：
+## 修改研究方向
+
+要把程序迁移到新的研究方向，通常只需要修改 `config.yaml`：
 
 ```yaml
 keywords:
   include:
-    - "composite solid electrolyte"
+    - "target research topic"
+    - "important keyword"
+    - "key method"
   exclude:
-    - "aqueous electrolyte"
+    - "irrelevant field"
+    - "unwanted material or application"
 ```
 
-增加 `include` 可以扩大检索面；增加 `exclude` 可以减少水系电解质、超级电容器、燃料电池等噪声主题。
+建议做法：
 
-## 修改期刊影响因子
+1. 先写 5 到 20 个核心英文关键词；
+2. 加入常见同义词和缩写；
+3. 把容易混入的相邻领域写入 `exclude`；
+4. 本地运行 `python src/main.py --dry-run` 检查结果；
+5. 根据报告中的噪声论文继续调整关键词。
 
-编辑：
+## 修改期刊指标
+
+如果 EasyScholar 未覆盖某些期刊，可以在 `config.yaml` 中维护备用影响因子：
 
 ```yaml
 venues:
   impact_factors:
-    Nature Energy: 56.7
-    Energy Storage Materials: 18.9
+    Example Journal A: 12.3
+    Example Journal B: 6.8
 ```
 
-当前评分只使用文章标题相关度和期刊影响因子。程序会优先使用 EasyScholar 查询到的 SCI 影响因子；如果没有配置 `EASYSCHOLAR_SECRET_KEY`、接口失败或期刊未匹配，再使用 `venues.impact_factors` 中的备用数值。
-
-邮件中的每篇论文会显示：
+邮件中的每篇论文会显示类似：
 
 ```text
-SCI 影响因子 / JCR 分区：18.9 / Q1（EasyScholar）
+SCI 影响因子 / JCR 分区：12.3 / Q1（EasyScholar）
 ```
+
+或在 EasyScholar 未匹配时显示配置表来源。
 
 ## 查看历史报告
 
@@ -173,7 +277,7 @@ weekly_report_YYYY-MM-DD.html
 
 ## 去重和已推送记录
 
-`data/seen.json` 会记录已经推送过的 DOI 或标题指纹，避免下周重复发送同一篇论文。
+`data/seen.json` 会记录已经推送过的 DOI 或标题指纹，避免下周重复推送同一篇论文。
 
 去重规则包括：
 
@@ -192,7 +296,9 @@ pytest -q
 - DOI 去重；
 - 标题相似度去重；
 - 文献评分函数；
-- 邮件正文生成。
+- EasyScholar 期刊指标解析；
+- Gemini 分析和限流重试；
+- 邮件正文和运行报告生成。
 
 ## 邮件发送失败排查
 
@@ -202,29 +308,22 @@ pytest -q
 - 邮箱服务商要求使用应用专用密码，而不是登录密码；
 - 邮箱没有开启 SMTP；
 - GitHub Secrets 名称写错；
-- `EMAIL_TO` 仍是 `your_email@example.com`；
+- `EMAIL_TO` 仍是示例邮箱；
 - 公司或学校邮箱阻止第三方 SMTP 登录。
 
 排查建议：
 
-1. 先本地运行 `python src/main.py --dry-run`，确认报告能生成。
-2. 再设置 SMTP 环境变量后运行 `python src/main.py`。
-3. 如果本地可发送而 GitHub Actions 不行，优先检查 GitHub Secrets 是否完整。
+1. 先本地运行 `python src/main.py --dry-run`，确认报告能生成；
+2. 再设置 SMTP 环境变量后运行 `python src/main.py`；
+3. 如果本地可发送而 GitHub Actions 不行，优先检查 GitHub Secrets 是否完整；
 4. 查看 GitHub Actions 日志中的 `Failed to send report email` 信息。
 
-## 大模型总结
+## API 限流说明
 
-没有 `GEMINI_API_KEY` 时，程序会使用规则回答“它真正想解决的问题是什么？”、“它声称的贡献是什么？”和“它的主要结论是什么？”。
+外部 API 可能限流或短暂失败。程序会尽量跳过失败来源并继续生成报告。运行报告中会显示：
 
-配置 `GEMINI_API_KEY` 后，程序会在最终推荐论文列表确定后，才调用 Gemini API，以严格审稿人的口吻回答上述三个问题；候选论文池不会调用 Gemini。如果调用失败，不会中断工作流，会自动回退到基础报告。
-
-默认模型在 `config.yaml` 中配置为 `gemini-3.1-flash-lite`。
-
-为减少限流，`config.yaml` 中还可以调整：
-
-```yaml
-gemini:
-  min_interval_seconds: 15
-  retry_attempts: 2
-  retry_backoff_seconds: 30
-```
+- 每个文献数据库是否成功调用；
+- 每个数据库返回了多少条结果；
+- EasyScholar 查询了多少个期刊、匹配多少篇论文；
+- Gemini 尝试分析多少篇最终推荐论文；
+- Gemini 成功、失败、429 限流和规则回退数量。

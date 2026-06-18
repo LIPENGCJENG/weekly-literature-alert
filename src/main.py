@@ -24,7 +24,7 @@ from search_elsevier import search_elsevier
 from search_openalex import search_openalex
 from search_semantic_scholar import search_semantic_scholar
 from send_email import send_email
-from summarize_papers import markdown_to_html, render_markdown_report, save_reports
+from summarize_papers import enrich_papers_with_summaries, markdown_to_html, render_markdown_report, save_reports
 
 LOGGER = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -219,6 +219,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         )
         ranked_with_seen = rank_papers(unique_papers, config, end_date=today)
         selected = select_papers(unique_papers, ranked_with_seen, config, end_date=today)
+    selected = enrich_papers_with_summaries(selected, config)
     run_report = {
         "start_date": start_date.isoformat(),
         "end_date": today.isoformat(),

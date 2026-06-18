@@ -181,6 +181,14 @@ def _json_from_model_text(text: str) -> dict[str, Any]:
     return json.loads(text)
 
 
+def _doi_url(doi: str) -> str:
+    doi = (doi or "").strip()
+    if not doi:
+        return ""
+    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", doi, flags=re.IGNORECASE).strip()
+    return f"https://doi.org/{doi}"
+
+
 def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str] | None:
     api_key = os.getenv("GEMINI_API_KEY", "")
     gemini_config = config.get("gemini", {})
@@ -197,6 +205,7 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
             f"标题：{paper.get('title')}\n"
             f"期刊：{paper.get('venue')}\n"
             f"日期：{paper.get('published_date')}\n"
+            f"DOI URL：{_doi_url(paper.get('doi', '')) or '无'}\n"
             f"摘要：{paper.get('abstract')}\n"
             "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
         )
@@ -226,12 +235,29 @@ def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     return _gemini_summary(paper, config) or _rule_based_summary(paper, config)
 
 
+def enrich_papers_with_summaries(papers: list[dict[str, Any]], config: dict[str, Any]) -> list[dict[str, Any]]:
+    enriched: list[dict[str, Any]] = []
+    for paper in papers:
+        item = dict(paper)
+        item["analysis"] = summarize_paper(item, config)
+        enriched.append(item)
+    return enriched
+
+
+def _analysis_for_report(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
+    analysis = paper.get("analysis")
+    if isinstance(analysis, dict) and analysis.get("problem") and analysis.get("contribution"):
+        return {
+            "problem": str(analysis["problem"]),
+            "contribution": str(analysis["contribution"]),
+        }
+    return _rule_based_summary(paper, config)
+
+
 def _doi_markdown(doi: str) -> str:
-    doi = (doi or "").strip()
-    if not doi:
+    doi_url = _doi_url(doi)
+    if not doi_url:
         return "无"
-    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", doi, flags=re.IGNORECASE).strip()
-    doi_url = f"https://doi.org/{doi}"
     return f"[{doi_url}]({doi_url})"
 
 
@@ -275,7 +301,7 @@ def render_markdown_report(
         return "\n".join(lines)
 
     for index, paper in enumerate(papers, start=1):
-        analysis = summarize_paper(paper, config)
+        analysis = _analysis_for_report(paper, config)
         lines.extend(
             [
                 f"## {index}. {paper.get('title') or '未命名论文'}",

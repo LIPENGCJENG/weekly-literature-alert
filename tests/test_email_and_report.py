@@ -1,7 +1,13 @@
 from datetime import date
 
 from src.send_email import build_email_message
-from src.summarize_papers import _gemini_summary, _json_from_model_text, markdown_to_html, render_markdown_report
+from src.summarize_papers import (
+    _gemini_summary,
+    _json_from_model_text,
+    enrich_papers_with_summaries,
+    markdown_to_html,
+    render_markdown_report,
+)
 
 
 def test_email_body_generation():
@@ -129,3 +135,55 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
     assert "models/gemini-3.1-flash-lite:generateContent" in calls["url"]
     assert calls["params"] == {"key": "test-key"}
+
+
+def test_render_report_does_not_call_gemini(monkeypatch):
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("Gemini should only be called before rendering final selected papers.")
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fail_if_called)
+
+    markdown_report = render_markdown_report(
+        [
+            {
+                "title": "Composite solid electrolyte paper",
+                "venue": "Energy Storage Materials",
+                "abstract": "A ceramic filler regulates lithium ion transport.",
+            }
+        ],
+        {
+            "gemini": {"model": "gemini-3.1-flash-lite"},
+            "keywords": {"include": ["composite solid electrolyte"]},
+            "ranking": {"doctoral_boost_terms": []},
+        },
+        report_date=date(2026, 6, 16),
+    )
+
+    assert "Composite solid electrolyte paper" in markdown_report
+    assert "它试图解决的是" in markdown_report
+
+
+def test_enrich_summaries_calls_gemini_only_for_given_final_papers(monkeypatch):
+    calls = []
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls.append(json["contents"][0]["parts"][0]["text"])
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    final_papers = [
+        {"title": "Final selected paper 1", "doi": "10.1000/one"},
+        {"title": "Final selected paper 2", "doi": "https://doi.org/10.1000/two"},
+    ]
+    enriched = enrich_papers_with_summaries(
+        final_papers,
+        {"gemini": {"model": "gemini-3.1-flash-lite"}, "search": {"request_timeout": 5}},
+    )
+
+    assert len(calls) == 2
+    assert all("analysis" in paper for paper in enriched)
+    assert "https://doi.org/10.1000/one" in calls[0]
+    assert "https://doi.org/10.1000/two" in calls[1]

@@ -56,6 +56,34 @@ keywords:
     - "imprinting polymer"
 
 venues:
+  # 请按最新 JCR 或你认可的数据源维护。未列出的期刊会使用 ranking.default_impact_factor。
+  impact_factors:
+    Nature: 50.5
+    Science: 44.7
+    Nature Energy: 56.7
+    Nature Materials: 37.2
+    Nature Nanotechnology: 38.1
+    Joule: 39.8
+    Energy & Environmental Science: 32.5
+    Advanced Materials: 27.4
+    Advanced Energy Materials: 24.4
+    Advanced Functional Materials: 18.5
+    Journal of the American Chemical Society: 14.4
+    ACS Energy Letters: 19.3
+    ACS Nano: 15.8
+    Energy Storage Materials: 18.9
+    Nano Energy: 16.8
+    Chemistry of Materials: 7.2
+    Journal of Materials Chemistry A: 10.7
+    Journal of Power Sources: 8.1
+    Journal of Energy Storage: 8.9
+    Solid State Ionics: 3.2
+    Electrochimica Acta: 5.5
+    ACS Applied Materials & Interfaces: 9.5
+    Small: 13.0
+    Small Structures: 15.9
+    Advanced Science: 14.1
+    Journal of Electroanalytical Chemistry: 4.1
   whitelist:
     - "Nature"
     - "Science"
@@ -82,10 +110,10 @@ venues:
     - "Advanced Science"
 
 ranking:
-  weight_relevance: 0.5
-  weight_venue: 0.30
-  weight_recency: 0.1
-  weight_citation_signal: 0.10
+  weight_title_relevance: 0.70
+  weight_impact_factor: 0.30
+  default_impact_factor: 1.0
+  max_impact_factor: 60.0
   doctoral_boost_terms:
     - "lithium-ion conduction mechanism"
     - "lithium ion transport"

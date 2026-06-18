@@ -208,6 +208,15 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
     unseen_papers = filter_seen(unique_papers, seen)
     ranked = rank_papers(unseen_papers, config, end_date=today)
     selected = select_papers(unseen_papers, ranked, config, end_date=today)
+    min_recommendations = int(config.get("search", {}).get("min_recommendations", 0))
+    if len(selected) < min_recommendations:
+        LOGGER.info(
+            "Only %d unseen papers selected; allowing previously seen papers to reach minimum %d.",
+            len(selected),
+            min_recommendations,
+        )
+        ranked_with_seen = rank_papers(unique_papers, config, end_date=today)
+        selected = select_papers(unique_papers, ranked_with_seen, config, end_date=today)
     run_report = {
         "start_date": start_date.isoformat(),
         "end_date": today.isoformat(),

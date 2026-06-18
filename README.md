@@ -56,7 +56,8 @@ pip install -r requirements.txt
 - `search.semantic_scholar_min_interval_seconds`：Semantic Scholar 请求间隔，默认 1.1 秒，用于满足每秒最多 1 次请求的限制。
 - `keywords.include`：检索和相关性评分关键词。
 - `keywords.exclude`：排除明显不相关主题。
-- `venues.whitelist`：高优先级期刊白名单。
+- `venues.impact_factors`：期刊影响因子表，评分会使用这里的数值。
+- `ranking.weight_title_relevance` 和 `ranking.weight_impact_factor`：评分只由标题相关度和期刊影响因子组成。
 
 ## 本地运行
 
@@ -138,18 +139,18 @@ keywords:
 
 增加 `include` 可以扩大检索面；增加 `exclude` 可以减少水系电解质、超级电容器、燃料电池等噪声主题。
 
-## 修改期刊白名单
+## 修改期刊影响因子
 
 编辑：
 
 ```yaml
 venues:
-  whitelist:
-    - "Nature Energy"
-    - "Energy Storage Materials"
+  impact_factors:
+    Nature Energy: 56.7
+    Energy Storage Materials: 18.9
 ```
 
-白名单期刊会在评分中获得更高权重，但不在白名单内的论文不会被自动丢弃，仍会按主题相关性排序。
+当前评分只使用文章标题相关度和 `venues.impact_factors` 中配置的期刊影响因子。请按最新 JCR 或你认可的数据源维护影响因子数值。
 
 ## 查看历史报告
 

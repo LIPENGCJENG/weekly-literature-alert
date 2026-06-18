@@ -7,8 +7,6 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
-from dateutil.parser import parse as parse_date
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -95,93 +93,59 @@ def filter_seen(papers: list[dict[str, Any]], seen: set[str]) -> list[dict[str, 
     return [paper for paper in papers if paper_fingerprint(paper) not in seen]
 
 
-def _combined_text(paper: dict[str, Any]) -> str:
-    parts = [
-        paper.get("title", ""),
-        paper.get("abstract", ""),
-        " ".join(paper.get("keywords", []) or []),
-        paper.get("venue", ""),
-    ]
-    return normalize_text(" ".join(parts))
-
-
-def _parse_date(value: str) -> date | None:
-    if not value:
-        return None
-    try:
-        return parse_date(str(value)).date()
-    except (TypeError, ValueError, OverflowError):
-        return None
-
-
-def _keyword_score(text: str, config: dict[str, Any]) -> float:
+def _title_relevance_score(title: str, config: dict[str, Any]) -> float:
+    text = normalize_text(title)
     include = config.get("keywords", {}).get("include", [])
     exclude = config.get("keywords", {}).get("exclude", [])
-    boost_terms = config.get("ranking", {}).get("doctoral_boost_terms", [])
     matched_include = sum(1 for term in include if contains_term(text, term))
     if matched_include == 0:
         return 0.0
-    matched_boost = sum(1 for term in boost_terms if contains_term(text, term))
     matched_exclude = sum(1 for term in exclude if contains_term(text, term))
 
-    include_score = min(1.0, matched_include / 4)
-    boost_score = min(0.35, matched_boost * 0.05)
-    penalty = min(0.6, matched_exclude * 0.2)
-    return max(0.0, min(1.0, include_score + boost_score - penalty))
+    include_score = min(1.0, matched_include / 3)
+    penalty = min(0.8, matched_exclude * 0.3)
+    return max(0.0, min(1.0, include_score - penalty))
 
 
-def _venue_score(venue: str, config: dict[str, Any]) -> float:
+def _configured_impact_factor(venue: str, config: dict[str, Any]) -> float:
     normalized_venue = normalize_text(venue)
-    whitelist = config.get("venues", {}).get("whitelist", [])
-    for index, name in enumerate(whitelist):
-        if normalize_text(name) in normalized_venue or normalized_venue in normalize_text(name):
-            return max(0.65, 1.0 - index * 0.015)
-    return 0.35
+    impact_factors = config.get("venues", {}).get("impact_factors", {})
+    for name, value in impact_factors.items():
+        normalized_name = normalize_text(str(name))
+        if normalized_name and (normalized_name in normalized_venue or normalized_venue in normalized_name):
+            try:
+                return max(0.0, float(value))
+            except (TypeError, ValueError):
+                return 0.0
+    return float(config.get("ranking", {}).get("default_impact_factor", 1.0))
 
 
-def _recency_score(published_date: str, end_date: date, days_back: int) -> float:
-    parsed = _parse_date(published_date)
-    if not parsed:
-        return 0.35
-    age = max(0, (end_date - parsed).days)
-    return max(0.0, 1.0 - age / max(1, days_back))
-
-
-def _citation_score(paper: dict[str, Any]) -> float:
-    citations = int(paper.get("citation_count") or 0)
-    influential = int(paper.get("influential_citation_count") or 0)
-    return min(1.0, (citations + influential * 2) / 50)
+def _impact_factor_score(venue: str, config: dict[str, Any]) -> tuple[float, float]:
+    impact_factor = _configured_impact_factor(venue, config)
+    max_impact_factor = max(1.0, float(config.get("ranking", {}).get("max_impact_factor", 80.0)))
+    return min(1.0, impact_factor / max_impact_factor), impact_factor
 
 
 def score_paper(paper: dict[str, Any], config: dict[str, Any], end_date: date | None = None) -> dict[str, Any]:
-    end_date = end_date or date.today()
-    days_back = int(config.get("search", {}).get("days_back", 10))
     weights = config.get("ranking", {})
-    text = _combined_text(paper)
-
-    relevance = _keyword_score(text, config)
-    venue = _venue_score(paper.get("venue", ""), config)
-    recency = _recency_score(paper.get("published_date", ""), end_date, days_back)
-    citation = _citation_score(paper)
+    title_relevance = _title_relevance_score(paper.get("title", ""), config)
+    impact_factor, impact_factor_value = _impact_factor_score(paper.get("venue", ""), config)
 
     score = (
-        relevance * float(weights.get("weight_relevance", 0.45))
-        + venue * float(weights.get("weight_venue", 0.30))
-        + recency * float(weights.get("weight_recency", 0.15))
-        + citation * float(weights.get("weight_citation_signal", 0.10))
+        title_relevance * float(weights.get("weight_title_relevance", 0.70))
+        + impact_factor * float(weights.get("weight_impact_factor", 0.30))
     )
     enriched = dict(paper)
     enriched["score"] = round(score * 10, 2)
     enriched["score_breakdown"] = {
-        "relevance": round(relevance, 3),
-        "venue": round(venue, 3),
-        "recency": round(recency, 3),
-        "citation_signal": round(citation, 3),
+        "title_relevance": round(title_relevance, 3),
+        "impact_factor": round(impact_factor, 3),
+        "impact_factor_value": round(impact_factor_value, 3),
     }
     return enriched
 
 
 def rank_papers(papers: list[dict[str, Any]], config: dict[str, Any], end_date: date | None = None) -> list[dict[str, Any]]:
     scored = [score_paper(paper, config, end_date=end_date) for paper in papers if paper.get("title")]
-    filtered = [paper for paper in scored if paper["score_breakdown"]["relevance"] > 0]
+    filtered = [paper for paper in scored if paper["score_breakdown"]["title_relevance"] > 0]
     return sorted(filtered, key=lambda paper: paper.get("score", 0), reverse=True)

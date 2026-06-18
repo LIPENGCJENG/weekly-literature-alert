@@ -10,12 +10,15 @@ CONFIG = {
         "include": ["composite solid electrolyte", "solid polymer electrolyte", "ceramic filler", "PEO LiTFSI"],
         "exclude": ["aqueous electrolyte"],
     },
-    "venues": {"whitelist": ["Energy Storage Materials", "Journal of Power Sources"]},
+    "venues": {
+        "impact_factors": {"Energy Storage Materials": 18.9, "Journal of Power Sources": 8.1},
+        "whitelist": ["Energy Storage Materials", "Journal of Power Sources"],
+    },
     "ranking": {
-        "weight_relevance": 0.45,
-        "weight_venue": 0.30,
-        "weight_recency": 0.15,
-        "weight_citation_signal": 0.10,
+        "weight_title_relevance": 0.70,
+        "weight_impact_factor": 0.30,
+        "default_impact_factor": 1.0,
+        "max_impact_factor": 20.0,
         "doctoral_boost_terms": ["PEO", "LiTFSI", "space charge layer"],
     },
 }
@@ -53,23 +56,26 @@ def test_boost_terms_alone_do_not_rank_paper():
     assert rank_papers([paper], CONFIG, end_date=date(2026, 6, 16)) == []
 
 
-def test_scoring_prefers_relevant_high_quality_paper():
+def test_scoring_uses_only_title_relevance_and_impact_factor():
     relevant = {
         "title": "PEO LiTFSI composite solid electrolyte with ceramic filler interface",
-        "abstract": "The space charge layer improves lithium ion transport.",
+        "abstract": "This abstract should not affect the score.",
         "venue": "Energy Storage Materials",
-        "published_date": "2026-06-15",
-        "citation_count": 8,
+        "published_date": "2020-01-01",
+        "citation_count": 0,
     }
-    irrelevant = {
-        "title": "Aqueous electrolyte for supercapacitor",
-        "abstract": "An aqueous electrolyte device.",
+    same_title_lower_if = {
+        **relevant,
         "venue": "Unknown Journal",
         "published_date": "2026-06-15",
-        "citation_count": 8,
+        "citation_count": 1000,
     }
-    assert score_paper(relevant, CONFIG, end_date=date(2026, 6, 16))["score"] > score_paper(irrelevant, CONFIG, end_date=date(2026, 6, 16))["score"]
-    assert rank_papers([irrelevant, relevant], CONFIG, end_date=date(2026, 6, 16))[0]["title"] == relevant["title"]
+    scored = score_paper(relevant, CONFIG, end_date=date(2026, 6, 16))
+    lower_if_score = score_paper(same_title_lower_if, CONFIG, end_date=date(2026, 6, 16))
+
+    assert set(scored["score_breakdown"]) == {"title_relevance", "impact_factor", "impact_factor_value"}
+    assert scored["score"] > lower_if_score["score"]
+    assert rank_papers([same_title_lower_if, relevant], CONFIG, end_date=date(2026, 6, 16))[0]["venue"] == "Energy Storage Materials"
 
 
 def test_select_papers_can_supplement_to_minimum_without_excluded_topics():

@@ -79,6 +79,14 @@ def _extract_jcr_quartile(payload: dict[str, Any]) -> str:
         match = re.search(r"[1-4]\s*[区區]", text)
         if match:
             return "Q" + match.group(0)[0]
+    for _, value in _walk_values(payload):
+        text = str(value).strip()
+        match = re.search(r"\bQ[1-4]\b", text, flags=re.IGNORECASE)
+        if match:
+            return match.group(0).upper()
+        match = re.search(r"[1-4]\s*[区區]", text)
+        if match:
+            return "Q" + match.group(0)[0]
     return ""
 
 

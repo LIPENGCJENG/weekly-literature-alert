@@ -12,7 +12,7 @@ class FakeEasyScholarResponse:
             "data": {
                 "publicationName": "Energy Storage Materials",
                 "sciif": "18.9",
-                "jcr": "Q1",
+                "sci": "1区",
             },
         }
 

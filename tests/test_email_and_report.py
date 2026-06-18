@@ -51,6 +51,10 @@ def test_email_body_generation():
     assert "### 2. 它声称的贡献是什么？" in markdown_report
     assert "A PEO based composite solid electrolyte is studied." not in markdown_report
     assert "它试图解决的是" in markdown_report
+    assert "**链接**" not in markdown_report
+    assert "https://example.org" not in markdown_report
+    assert "[https://doi.org/10.1000/example](https://doi.org/10.1000/example)" in markdown_report
+    assert "https://doi.org/10.1000/example" in html
     assert "## 运行报告" in markdown_report
     assert "| OpenAlex | 成功 | 7 | API 已成功调用 |" in markdown_report
     assert "| Semantic Scholar | 未调用 | 0 | 缺少 SEMANTIC_SCHOLAR_API_KEY |" in markdown_report

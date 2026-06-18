@@ -226,6 +226,15 @@ def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     return _gemini_summary(paper, config) or _rule_based_summary(paper, config)
 
 
+def _doi_markdown(doi: str) -> str:
+    doi = (doi or "").strip()
+    if not doi:
+        return "无"
+    doi = re.sub(r"^https?://(?:dx\.)?doi\.org/", "", doi, flags=re.IGNORECASE).strip()
+    doi_url = f"https://doi.org/{doi}"
+    return f"[{doi_url}]({doi_url})"
+
+
 def render_markdown_report(
     papers: list[dict[str, Any]],
     config: dict[str, Any],
@@ -258,8 +267,7 @@ def render_markdown_report(
                 f"**作者**：{_authors_text(paper.get('authors', []))}",
                 f"**期刊/平台**：{paper.get('venue') or paper.get('source') or '未知'}",
                 f"**发表时间**：{paper.get('published_date') or '未知'}",
-                f"**DOI**：{paper.get('doi') or '无'}",
-                f"**链接**：{paper.get('url') or '无'}",
+                f"**DOI**：{_doi_markdown(paper.get('doi', ''))}",
                 f"**相关性评分**：{paper.get('score', 0)}/10",
                 "",
                 "### 1. 它真正想解决的问题是什么？",

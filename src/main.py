@@ -7,6 +7,7 @@ from typing import Any, Callable
 
 import yaml
 
+from easyscholar import enrich_papers_with_journal_metrics
 from rank_papers import (
     contains_term,
     deduplicate_papers,
@@ -204,6 +205,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
     LOGGER.info("Searching papers from %s to %s", start_date, today)
     raw_papers, source_stats = search_all_sources(config, start_date, today)
     unique_papers = deduplicate_papers(raw_papers)
+    unique_papers, journal_metrics_stats = enrich_papers_with_journal_metrics(unique_papers, config)
     seen = load_seen(seen_path)
     unseen_papers = filter_seen(unique_papers, seen)
     ranked = rank_papers(unseen_papers, config, end_date=today)
@@ -225,6 +227,7 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         "unseen_count": len(unseen_papers),
         "selected_count": len(selected),
         "sources": source_stats,
+        "journal_metrics": journal_metrics_stats,
     }
 
     markdown_report = render_markdown_report(

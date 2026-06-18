@@ -235,6 +235,22 @@ def _doi_markdown(doi: str) -> str:
     return f"[{doi_url}]({doi_url})"
 
 
+def _journal_metrics_text(paper: dict[str, Any]) -> str:
+    try:
+        impact_factor = float(paper.get("impact_factor"))
+    except (TypeError, ValueError):
+        impact_factor = 0.0
+    if impact_factor <= 0:
+        return "未获取"
+
+    impact_factor_text = f"{impact_factor:.3f}".rstrip("0").rstrip(".")
+    jcr_quartile = str(paper.get("jcr_quartile") or "").strip()
+    source = str(paper.get("impact_factor_source") or "").strip()
+    parts = [impact_factor_text, jcr_quartile or "JCR 未获取"]
+    suffix = f"（{source}）" if source else ""
+    return " / ".join(parts) + suffix
+
+
 def render_markdown_report(
     papers: list[dict[str, Any]],
     config: dict[str, Any],
@@ -266,6 +282,7 @@ def render_markdown_report(
                 "",
                 f"**作者**：{_authors_text(paper.get('authors', []))}",
                 f"**期刊/平台**：{paper.get('venue') or paper.get('source') or '未知'}",
+                f"**SCI 影响因子 / JCR 分区**：{_journal_metrics_text(paper)}",
                 f"**发表时间**：{paper.get('published_date') or '未知'}",
                 f"**DOI**：{_doi_markdown(paper.get('doi', ''))}",
                 f"**相关性评分**：{paper.get('score', 0)}/10",
@@ -311,6 +328,20 @@ def _append_run_report(lines: list[str], run_report: dict[str, Any] | None) -> N
             )
         )
     lines.append("")
+    journal_metrics = run_report.get("journal_metrics") or {}
+    if journal_metrics:
+        lines.extend(
+            [
+                "",
+                "**期刊指标查询**：{status}；查询 {queried} 个期刊，匹配 {matched} 篇论文。{note}".format(
+                    status=str(journal_metrics.get("status", "未知")),
+                    queried=int(journal_metrics.get("queried_count", 0) or 0),
+                    matched=int(journal_metrics.get("matched_count", 0) or 0),
+                    note=str(journal_metrics.get("note", "")),
+                ),
+                "",
+            ]
+        )
 
 
 def markdown_to_html(markdown_text: str) -> str:

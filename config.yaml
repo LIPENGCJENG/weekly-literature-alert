@@ -135,3 +135,6 @@ email:
 gemini:
   model: "gemini-3.1-flash-lite"
   enable_if_key_present: true
+
+easyscholar:
+  min_interval_seconds: 0.2

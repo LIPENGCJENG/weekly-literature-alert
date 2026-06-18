@@ -8,7 +8,7 @@
 - 陶瓷填料界面效应
 - 聚合物-陶瓷界面与空间电荷层
 
-工作流会从 OpenAlex、Crossref、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
+工作流会从 OpenAlex、Crossref、Elsevier Scopus 和 Semantic Scholar 检索最近若干天的新论文，用 EasyScholar 查询 SCI 影响因子/JCR 分区，去重、评分、生成中文 Markdown/HTML 报告，并通过邮件发送。
 
 ## 项目结构
 
@@ -56,8 +56,9 @@ pip install -r requirements.txt
 - `search.semantic_scholar_min_interval_seconds`：Semantic Scholar 请求间隔，默认 1.1 秒，用于满足每秒最多 1 次请求的限制。
 - `keywords.include`：检索和相关性评分关键词。
 - `keywords.exclude`：排除明显不相关主题。
-- `venues.impact_factors`：期刊影响因子表，评分会使用这里的数值。
+- `venues.impact_factors`：期刊影响因子备用表。当 EasyScholar 未配置或查询失败时，评分会使用这里的数值。
 - `ranking.weight_title_relevance` 和 `ranking.weight_impact_factor`：评分只由标题相关度和期刊影响因子组成。
+- `easyscholar.min_interval_seconds`：EasyScholar 期刊指标查询间隔，避免请求过密。
 
 ## 本地运行
 
@@ -112,6 +113,7 @@ export EMAIL_TO="your_email@example.com"
 - `GEMINI_API_KEY`，可选，用于增强论文问题和贡献分析
 - `SEMANTIC_SCHOLAR_API_KEY`，用于启用 Semantic Scholar 检索。程序会按官方要求通过 `x-api-key` 请求头发送，并默认限制为每秒最多 1 次请求。
 - `ELSEVIER_API_KEY`，用于启用 Elsevier Scopus 检索。不要把 API Key 写入 `config.yaml` 或提交到仓库。
+- `EASYSCHOLAR_SECRET_KEY`，用于调用 EasyScholar 开放接口查询 SCI 影响因子和 JCR 分区。不要把 SecretKey 写入 `config.yaml` 或提交到仓库。
 
 ## GitHub Actions 定时运行
 
@@ -150,7 +152,13 @@ venues:
     Energy Storage Materials: 18.9
 ```
 
-当前评分只使用文章标题相关度和 `venues.impact_factors` 中配置的期刊影响因子。请按最新 JCR 或你认可的数据源维护影响因子数值。
+当前评分只使用文章标题相关度和期刊影响因子。程序会优先使用 EasyScholar 查询到的 SCI 影响因子；如果没有配置 `EASYSCHOLAR_SECRET_KEY`、接口失败或期刊未匹配，再使用 `venues.impact_factors` 中的备用数值。
+
+邮件中的每篇论文会显示：
+
+```text
+SCI 影响因子 / JCR 分区：18.9 / Q1（EasyScholar）
+```
 
 ## 查看历史报告
 

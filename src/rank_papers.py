@@ -120,16 +120,25 @@ def _configured_impact_factor(venue: str, config: dict[str, Any]) -> float:
     return float(config.get("ranking", {}).get("default_impact_factor", 1.0))
 
 
-def _impact_factor_score(venue: str, config: dict[str, Any]) -> tuple[float, float]:
-    impact_factor = _configured_impact_factor(venue, config)
+def _paper_impact_factor(paper: dict[str, Any], config: dict[str, Any]) -> tuple[float, str]:
+    try:
+        if paper.get("impact_factor") is not None:
+            return max(0.0, float(paper["impact_factor"])), str(paper.get("impact_factor_source") or "EasyScholar")
+    except (TypeError, ValueError):
+        pass
+    return _configured_impact_factor(paper.get("venue", ""), config), "配置表"
+
+
+def _impact_factor_score(paper: dict[str, Any], config: dict[str, Any]) -> tuple[float, float, str]:
+    impact_factor, impact_factor_source = _paper_impact_factor(paper, config)
     max_impact_factor = max(1.0, float(config.get("ranking", {}).get("max_impact_factor", 80.0)))
-    return min(1.0, impact_factor / max_impact_factor), impact_factor
+    return min(1.0, impact_factor / max_impact_factor), impact_factor, impact_factor_source
 
 
 def score_paper(paper: dict[str, Any], config: dict[str, Any], end_date: date | None = None) -> dict[str, Any]:
     weights = config.get("ranking", {})
     title_relevance = _title_relevance_score(paper.get("title", ""), config)
-    impact_factor, impact_factor_value = _impact_factor_score(paper.get("venue", ""), config)
+    impact_factor, impact_factor_value, impact_factor_source = _impact_factor_score(paper, config)
 
     score = (
         title_relevance * float(weights.get("weight_title_relevance", 0.70))
@@ -137,6 +146,8 @@ def score_paper(paper: dict[str, Any], config: dict[str, Any], end_date: date | 
     )
     enriched = dict(paper)
     enriched["score"] = round(score * 10, 2)
+    enriched["impact_factor"] = round(impact_factor_value, 3)
+    enriched["impact_factor_source"] = impact_factor_source
     enriched["score_breakdown"] = {
         "title_relevance": round(title_relevance, 3),
         "impact_factor": round(impact_factor, 3),

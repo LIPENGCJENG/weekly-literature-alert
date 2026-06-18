@@ -22,6 +22,9 @@ def test_email_body_generation():
                 "url": "https://example.org",
                 "abstract": "A PEO based composite solid electrolyte is studied.",
                 "score": 9.1,
+                "impact_factor": 18.9,
+                "jcr_quartile": "Q1",
+                "impact_factor_source": "EasyScholar",
             }
         ],
         config,
@@ -38,6 +41,13 @@ def test_email_body_generation():
                 {"source": "OpenAlex", "status": "成功", "returned_count": 7, "note": "API 已成功调用"},
                 {"source": "Semantic Scholar", "status": "未调用", "returned_count": 0, "note": "缺少 SEMANTIC_SCHOLAR_API_KEY"},
             ],
+            "journal_metrics": {
+                "source": "EasyScholar JCR",
+                "status": "成功",
+                "queried_count": 1,
+                "matched_count": 1,
+                "note": "API 已调用，1 次成功，0 次失败；1 篇论文匹配到影响因子",
+            },
         },
     )
     html = markdown_to_html(markdown_report)
@@ -54,10 +64,12 @@ def test_email_body_generation():
     assert "**链接**" not in markdown_report
     assert "https://example.org" not in markdown_report
     assert "[https://doi.org/10.1000/example](https://doi.org/10.1000/example)" in markdown_report
+    assert "**SCI 影响因子 / JCR 分区**：18.9 / Q1（EasyScholar）" in markdown_report
     assert "https://doi.org/10.1000/example" in html
     assert "## 运行报告" in markdown_report
     assert "| OpenAlex | 成功 | 7 | API 已成功调用 |" in markdown_report
     assert "| Semantic Scholar | 未调用 | 0 | 缺少 SEMANTIC_SCHOLAR_API_KEY |" in markdown_report
+    assert "期刊指标查询" in markdown_report
     assert "运行报告" in html
     assert "2026-06-16" in message["Subject"]
     assert message.is_multipart()

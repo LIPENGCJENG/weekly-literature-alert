@@ -158,6 +158,11 @@ def _rule_based_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[s
             f"并用{signals or '性能数据和结构分析'}支撑该方案的有效性。"
             "具体贡献仍建议结合全文核对实验条件、对照组和机理证据强度。"
         )
+        conclusion = (
+            f"它的主要结论大概率围绕{topic}体系的性能改善或机制解释展开。"
+            f"从可获取信息看，结论证据主要落在{signals or '结构表征、性能测试和机理分析'}上；"
+            "建议阅读全文确认作者是否充分排除了其他解释。"
+        )
     else:
         problem = (
             "当前公开 API 未返回完整摘要。"
@@ -168,9 +173,14 @@ def _rule_based_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[s
             "由于缺少摘要，暂时只能判断它可能声称在材料设计、性能提升或机理解释上有所推进。"
             "建议后续阅读全文核对作者真正提出的新方法、新证据或新机制。"
         )
+        conclusion = (
+            "由于缺少摘要，暂时无法可靠判断主要结论。"
+            "目前只能根据题名推测其结论可能涉及材料性能、界面稳定性或离子传输表现的改善。"
+        )
     return {
         "problem": problem,
         "contribution": contribution,
+        "conclusion": conclusion,
     }
 
 
@@ -200,15 +210,20 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
     try:
         model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        doi_url = _doi_url(paper.get("doi", "")) or "无"
         prompt = (
-            "请用中文分析下面论文，并只用 JSON 返回，键名为 problem, contribution。"
-            "problem 回答“它真正想解决的问题是什么？”，要指出论文试图处理的核心科学或工程问题。"
-            "contribution 回答“它声称的贡献是什么？”，要说明作者声称的新材料、新方法、新机制或新证据。"
-            "不要直接粘贴英文摘要，不要编造摘要中没有的信息。\n\n"
+            f"你现在扮演一个严格的审稿人。对于这篇论文 {doi_url}，不要总结这篇论文，"
+            "而是回答三个问题：\n"
+            "1. 它真正想解决的问题是什么？\n"
+            "2. 它声称的贡献是什么？\n"
+            "3. 它的主要结论是什么？\n\n"
+            "请用中文回答，并只用 JSON 返回，键名必须为 problem, contribution, conclusion。"
+            "回答要像审稿人一样克制、具体，区分作者声称的内容和已经被证据支持的内容。"
+            "不要直接粘贴英文摘要，不要编造 DOI 页面、题名或摘要中没有的信息。\n\n"
             f"标题：{paper.get('title')}\n"
             f"期刊：{paper.get('venue')}\n"
             f"日期：{paper.get('published_date')}\n"
-            f"DOI URL：{_doi_url(paper.get('doi', '')) or '无'}\n"
+            f"DOI URL：{doi_url}\n"
             f"摘要：{paper.get('abstract')}\n"
             "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
         )
@@ -231,7 +246,7 @@ def _gemini_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
                 text = "".join(part.get("text", "") for part in parts)
                 payload = _json_from_model_text(text)
                 LOGGER.info("Gemini summary generated for %r", paper.get("title"))
-                return {key: str(payload.get(key, "")) for key in ["problem", "contribution"]}
+                return {key: str(payload.get(key, "")) for key in ["problem", "contribution", "conclusion"]}
             except requests.HTTPError as exc:
                 status_code = exc.response.status_code if exc.response is not None else None
                 if status_code == 429 and attempt < retry_attempts:
@@ -280,10 +295,16 @@ def enrich_papers_with_summaries(papers: list[dict[str, Any]], config: dict[str,
 
 def _analysis_for_report(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
     analysis = paper.get("analysis")
-    if isinstance(analysis, dict) and analysis.get("problem") and analysis.get("contribution"):
+    if (
+        isinstance(analysis, dict)
+        and analysis.get("problem")
+        and analysis.get("contribution")
+        and analysis.get("conclusion")
+    ):
         return {
             "problem": str(analysis["problem"]),
             "contribution": str(analysis["contribution"]),
+            "conclusion": str(analysis["conclusion"]),
         }
     return _rule_based_summary(paper, config)
 
@@ -354,6 +375,10 @@ def render_markdown_report(
                 "### 2. 它声称的贡献是什么？",
                 "",
                 analysis["contribution"],
+                "",
+                "### 3. 它的主要结论是什么？",
+                "",
+                analysis["conclusion"],
                 "",
             ]
         )

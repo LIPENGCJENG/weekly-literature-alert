@@ -67,8 +67,10 @@ def test_email_body_generation():
     assert "对博士课题的启发" not in markdown_report
     assert "### 1. 它真正想解决的问题是什么？" in markdown_report
     assert "### 2. 它声称的贡献是什么？" in markdown_report
+    assert "### 3. 它的主要结论是什么？" in markdown_report
     assert "A PEO based composite solid electrolyte is studied." not in markdown_report
     assert "它试图解决的是" in markdown_report
+    assert "它的主要结论" in markdown_report
     assert "**链接**" not in markdown_report
     assert "https://example.org" not in markdown_report
     assert "[https://doi.org/10.1000/example](https://doi.org/10.1000/example)" in markdown_report
@@ -86,11 +88,12 @@ def test_email_body_generation():
 def test_gemini_json_code_fence_parsing():
     payload = _json_from_model_text(
         """```json
-        {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
+        {"problem": "真正要解决的问题", "contribution": "声称的贡献", "conclusion": "主要结论"}
         ```"""
     )
     assert payload["problem"] == "真正要解决的问题"
     assert payload["contribution"] == "声称的贡献"
+    assert payload["conclusion"] == "主要结论"
 
 
 class FakeGeminiResponse:
@@ -104,7 +107,7 @@ class FakeGeminiResponse:
                     "content": {
                         "parts": [
                             {
-                                "text": '{"problem": "真正要解决的问题", "contribution": "声称的贡献"}'
+                                "text": '{"problem": "真正要解决的问题", "contribution": "声称的贡献", "conclusion": "主要结论"}'
                             }
                         ]
                     }
@@ -127,6 +130,7 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     def fake_post(url, params=None, json=None, timeout=None):
         calls["url"] = url
         calls["params"] = params
+        calls["json"] = json
         return FakeGeminiResponse()
 
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
@@ -142,9 +146,13 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
         {"gemini": {"model": "gemini-3.1-flash-lite"}, "search": {"request_timeout": 5}},
     )
 
-    assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
+    assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献", "conclusion": "主要结论"}
     assert "models/gemini-3.1-flash-lite:generateContent" in calls["url"]
     assert calls["params"] == {"key": "test-key"}
+    prompt = calls["json"]["contents"][0]["parts"][0]["text"]
+    assert "你现在扮演一个严格的审稿人" in prompt
+    assert "不要总结这篇论文" in prompt
+    assert "它的主要结论是什么？" in prompt
 
 
 def test_gemini_summary_retries_rate_limit(monkeypatch):
@@ -171,7 +179,7 @@ def test_gemini_summary_retries_rate_limit(monkeypatch):
         },
     )
 
-    assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献"}
+    assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献", "conclusion": "主要结论"}
     assert len(calls) == 2
     assert sleeps == [3]
 

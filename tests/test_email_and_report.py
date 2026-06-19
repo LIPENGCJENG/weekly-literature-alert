@@ -98,6 +98,74 @@ def test_email_body_generation():
     assert message.is_multipart()
 
 
+def test_english_email_language_generation():
+    config = {
+        "profile": {"email_to": "reader@example.com"},
+        "email": {"language": "English", "subject_prefix": "[每周文献推送]"},
+        "keywords": {"include": ["composite solid electrolyte"]},
+        "ranking": {"doctoral_boost_terms": ["PEO"]},
+    }
+    markdown_report = render_markdown_report(
+        [
+            {
+                "title": "Composite solid electrolyte paper",
+                "authors": ["A", "B"],
+                "venue": "Energy Storage Materials",
+                "published_date": "2026-06-15",
+                "doi": "10.1000/example",
+                "abstract": "A PEO based composite solid electrolyte is studied.",
+                "score": 9.1,
+                "impact_factor": 18.9,
+                "jcr_quartile": "Q1",
+                "impact_factor_source": "EasyScholar",
+            }
+        ],
+        config,
+        report_date=date(2026, 6, 16),
+        total_found=1,
+        run_report={
+            "start_date": "2026-05-16",
+            "end_date": "2026-06-16",
+            "raw_count": 12,
+            "unique_count": 10,
+            "unseen_count": 8,
+            "selected_count": 1,
+            "sources": [
+                {"source": "OpenAlex", "status": "成功", "returned_count": 7, "note": "API 已成功调用"},
+            ],
+            "journal_metrics": {
+                "source": "EasyScholar JCR",
+                "status": "成功",
+                "queried_count": 1,
+                "matched_count": 1,
+                "note": "API 已调用，1 次成功，0 次失败；1 篇论文匹配到影响因子",
+            },
+            "gemini": {
+                "source": "Gemini",
+                "status": "成功",
+                "attempted_count": 1,
+                "request_count": 1,
+                "success_count": 1,
+                "failed_count": 0,
+                "fallback_count": 0,
+                "rate_limited_count": 0,
+                "note": "Gemini enabled; successfully analyzed 1 final recommended papers",
+            },
+        },
+    )
+    html = markdown_to_html(markdown_report, config=config)
+    message = build_email_message(html, config, report_date=date(2026, 6, 16), markdown_body=markdown_report)
+
+    assert "# Weekly Literature Alert" in markdown_report
+    assert "### 1. What problem is it really trying to solve?" in markdown_report
+    assert "**SCI Impact Factor / JCR Quartile**: 18.9 / Q1(EasyScholar)" in markdown_report
+    assert "## Run Report" in markdown_report
+    assert "| OpenAlex | Success | 7 | API called successfully |" in markdown_report
+    assert "Gemini API usage" in markdown_report
+    assert '<html lang="en">' in html
+    assert message["Subject"] == "[Weekly Literature Alert] Latest Literature Update - 2026-06-16"
+
+
 def test_gemini_json_code_fence_parsing():
     payload = _json_from_model_text(
         """```json
@@ -166,6 +234,39 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert "你现在扮演一个严格的审稿人" in prompt
     assert "不要总结这篇论文" in prompt
     assert "它的主要结论是什么？" in prompt
+
+
+def test_gemini_summary_uses_english_prompt_when_configured(monkeypatch):
+    calls = {}
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls["json"] = json
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    _gemini_summary(
+        {
+            "title": "Composite polymer electrolyte",
+            "venue": "Energy Storage Materials",
+            "published_date": "2026-06-17",
+            "doi": "10.1000/example",
+            "abstract": "A ceramic filler regulates lithium ion transport.",
+        },
+        {
+            "email": {"language": "English"},
+            "gemini": {"model": "gemini-3.1-flash-lite"},
+            "search": {"request_timeout": 5},
+        },
+    )
+
+    prompt = calls["json"]["contents"][0]["parts"][0]["text"]
+    assert "You are now acting as a strict reviewer" in prompt
+    assert "do not summarize the paper" in prompt
+    assert "What are its main conclusions?" in prompt
+    assert "Answer in English" in prompt
+    assert "https://doi.org/10.1000/example" in prompt
 
 
 def test_gemini_summary_retries_rate_limit(monkeypatch):

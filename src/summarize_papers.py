@@ -70,6 +70,17 @@ SIGNAL_TRANSLATIONS = [
 ]
 
 
+def _email_language(config: dict[str, Any]) -> str:
+    language = str(config.get("email", {}).get("language", "Chinese")).strip().lower()
+    if language in {"english", "en", "英语"}:
+        return "en"
+    return "zh"
+
+
+def _is_english(config: dict[str, Any]) -> bool:
+    return _email_language(config) == "en"
+
+
 def _normalize_text(text: str) -> str:
     text = re.sub(r"<[^>]+>", " ", text or "")
     text = text.lower()
@@ -86,12 +97,13 @@ def _contains_term(text: str, term: str) -> bool:
     return normalized_term in text
 
 
-def _authors_text(authors: list[str], limit: int = 6) -> str:
+def _authors_text(authors: list[str], limit: int = 6, english: bool = False) -> str:
     if not authors:
-        return "未知"
+        return "Unknown" if english else "未知"
     if len(authors) <= limit:
         return ", ".join(authors)
-    return ", ".join(authors[:limit]) + " 等"
+    suffix = " et al." if english else " 等"
+    return ", ".join(authors[:limit]) + suffix
 
 
 def _shorten(text: str, length: int = 380) -> str:
@@ -124,7 +136,7 @@ def _translated_terms(terms: list[str]) -> list[str]:
     return translated
 
 
-def _summary_signals(paper: dict[str, Any]) -> list[str]:
+def _summary_signals(paper: dict[str, Any], english: bool = False) -> list[str]:
     text = _normalize_text(
         " ".join(
             [
@@ -136,17 +148,68 @@ def _summary_signals(paper: dict[str, Any]) -> list[str]:
     )
     signals: list[str] = []
     for term, translation in SIGNAL_TRANSLATIONS:
-        if _contains_term(text, term) and translation not in signals:
-            signals.append(translation)
+        value = term if english else translation
+        if _contains_term(text, term) and value not in signals:
+            signals.append(value)
     return signals
 
 
 def _rule_based_summary(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, str]:
     include_terms = _matched_terms(paper, config.get("keywords", {}).get("include", []))
     boost_terms = _matched_terms(paper, config.get("ranking", {}).get("doctoral_boost_terms", []))
-    topic_terms = _translated_terms(include_terms + boost_terms)
-    topic = "、".join(topic_terms[:5]) or "复合固态电解质与锂离子传输"
-    signals = "、".join(_summary_signals(paper)[:5])
+    english = _is_english(config)
+    topic_terms = (include_terms + boost_terms) if english else _translated_terms(include_terms + boost_terms)
+    if english:
+        topic = ", ".join(topic_terms[:5]) or "the configured research topic"
+        signals = ", ".join(_summary_signals(paper, english=True)[:5])
+    else:
+        topic = "、".join(topic_terms[:5]) or "复合固态电解质与锂离子传输"
+        signals = "、".join(_summary_signals(paper)[:5])
+
+    if english:
+        if paper.get("abstract"):
+            problem = (
+                f"It appears to address a key limitation related to {topic}. "
+                f"From the title and abstract, the problem centers on "
+                f"{signals or 'materials design, performance evaluation, and mechanistic interpretation'}. "
+                "The available metadata suggests that the authors are trying to connect material structure, "
+                "interfacial behavior, and ion-transport performance more clearly."
+            )
+            contribution = (
+                f"It claims to propose or validate a design, characterization, or mechanistic analysis route "
+                f"around {topic}, supported by "
+                f"{signals or 'performance data and structural analysis'}. "
+                "The strength of the claimed contribution should still be checked against the full text, "
+                "especially controls, experimental conditions, and mechanistic evidence."
+            )
+            conclusion = (
+                f"Its main conclusions likely concern performance improvement or mechanism clarification in "
+                f"{topic}. Based on the accessible information, the evidence mainly rests on "
+                f"{signals or 'structural characterization, performance testing, and mechanistic analysis'}; "
+                "the full paper should be checked to see whether competing explanations are adequately excluded."
+            )
+        else:
+            problem = (
+                "The public APIs did not return a complete abstract. "
+                f"Based on the title, venue, and metadata, the paper appears to focus on {topic}, "
+                "but the exact problem requires checking the full text."
+            )
+            contribution = (
+                "Because the abstract is unavailable, it can only be inferred that the paper may claim progress "
+                "in materials design, performance improvement, or mechanistic interpretation. "
+                "The full text should be checked for the actual method, evidence, and novelty."
+            )
+            conclusion = (
+                "Because the abstract is unavailable, the main conclusions cannot be judged reliably. "
+                "From the title alone, they may involve improved material performance, interfacial stability, "
+                "or ion-transport behavior."
+            )
+        return {
+            "problem": problem,
+            "contribution": contribution,
+            "conclusion": conclusion,
+        }
+
     if paper.get("abstract"):
         problem = (
             f"它试图解决的是{topic}相关体系中的关键限制。"
@@ -215,22 +278,42 @@ def _gemini_summary(
         model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
         doi_url = _doi_url(paper.get("doi", "")) or "无"
-        prompt = (
-            f"你现在扮演一个严格的审稿人。对于这篇论文 {doi_url}，不要总结这篇论文，"
-            "而是回答三个问题：\n"
-            "1. 它真正想解决的问题是什么？\n"
-            "2. 它声称的贡献是什么？\n"
-            "3. 它的主要结论是什么？\n\n"
-            "请用中文回答，并只用 JSON 返回，键名必须为 problem, contribution, conclusion。"
-            "回答要像审稿人一样克制、具体，区分作者声称的内容和已经被证据支持的内容。"
-            "不要直接粘贴英文摘要，不要编造 DOI 页面、题名或摘要中没有的信息。\n\n"
-            f"标题：{paper.get('title')}\n"
-            f"期刊：{paper.get('venue')}\n"
-            f"日期：{paper.get('published_date')}\n"
-            f"DOI URL：{doi_url}\n"
-            f"摘要：{paper.get('abstract')}\n"
-            "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
-        )
+        if _is_english(config):
+            prompt = (
+                f"You are now acting as a strict reviewer. For this paper {doi_url}, do not summarize the paper. "
+                "Instead, answer three questions:\n"
+                "1. What problem is it really trying to solve?\n"
+                "2. What contribution does it claim?\n"
+                "3. What are its main conclusions?\n\n"
+                "Answer in English and return JSON only, with exactly these keys: problem, contribution, conclusion. "
+                "Be restrained and specific like a reviewer, and distinguish the authors' claims from what is "
+                "actually supported by evidence. Do not paste the abstract, and do not invent information that is "
+                "not available from the DOI page, title, or abstract.\n\n"
+                f"Title: {paper.get('title')}\n"
+                f"Venue: {paper.get('venue')}\n"
+                f"Date: {paper.get('published_date')}\n"
+                f"DOI URL: {doi_url}\n"
+                f"Abstract: {paper.get('abstract')}\n"
+                "Research context: composite solid electrolytes, polymer electrolytes, lithium-ion conduction "
+                "mechanisms, and ceramic filler interface effects."
+            )
+        else:
+            prompt = (
+                f"你现在扮演一个严格的审稿人。对于这篇论文 {doi_url}，不要总结这篇论文，"
+                "而是回答三个问题：\n"
+                "1. 它真正想解决的问题是什么？\n"
+                "2. 它声称的贡献是什么？\n"
+                "3. 它的主要结论是什么？\n\n"
+                "请用中文回答，并只用 JSON 返回，键名必须为 problem, contribution, conclusion。"
+                "回答要像审稿人一样克制、具体，区分作者声称的内容和已经被证据支持的内容。"
+                "不要直接粘贴英文摘要，不要编造 DOI 页面、题名或摘要中没有的信息。\n\n"
+                f"标题：{paper.get('title')}\n"
+                f"期刊：{paper.get('venue')}\n"
+                f"日期：{paper.get('published_date')}\n"
+                f"DOI URL：{doi_url}\n"
+                f"摘要：{paper.get('abstract')}\n"
+                "研究背景：复合固态电解质、聚合物电解质、锂离子传导机理、陶瓷填料界面效应。"
+            )
         for attempt in range(1, retry_attempts + 1):
             try:
                 if stats is not None:
@@ -290,6 +373,12 @@ def summarize_paper(paper: dict[str, Any], config: dict[str, Any]) -> dict[str, 
 
 
 def _gemini_disabled_note(config: dict[str, Any]) -> str:
+    if _is_english(config):
+        if not os.getenv("GEMINI_API_KEY", ""):
+            return "Missing GEMINI_API_KEY; using rule-based analysis"
+        if not config.get("gemini", {}).get("enable_if_key_present", True):
+            return "Gemini is disabled in config.yaml; using rule-based analysis"
+        return "Gemini was not called; using rule-based analysis"
     if not os.getenv("GEMINI_API_KEY", ""):
         return "缺少 GEMINI_API_KEY，使用规则分析"
     if not config.get("gemini", {}).get("enable_if_key_present", True):
@@ -297,7 +386,7 @@ def _gemini_disabled_note(config: dict[str, Any]) -> str:
     return "Gemini 未调用，使用规则分析"
 
 
-def _finalize_gemini_stats(stats: dict[str, Any]) -> dict[str, Any]:
+def _finalize_gemini_stats(stats: dict[str, Any], config: dict[str, Any]) -> dict[str, Any]:
     attempted = int(stats.get("attempted_count", 0))
     success = int(stats.get("success_count", 0))
     failed = int(stats.get("failed_count", 0))
@@ -305,9 +394,29 @@ def _finalize_gemini_stats(stats: dict[str, Any]) -> dict[str, Any]:
     requests_count = int(stats.get("request_count", 0))
     rate_limited = int(stats.get("rate_limited_count", 0))
 
+    english = _is_english(config)
     if attempted == 0:
-        stats["status"] = "未调用"
-        stats["note"] = stats.get("note") or "Gemini 未调用"
+        stats["status"] = "Not called" if english else "未调用"
+        stats["note"] = stats.get("note") or ("Gemini was not called" if english else "Gemini 未调用")
+    elif english and failed and success:
+        stats["status"] = "Partial success"
+        stats["note"] = (
+            f"Gemini enabled; attempted {attempted} final recommended papers, "
+            f"{success} succeeded, {failed} failed, {fallback} used rule-based fallback; "
+            f"{requests_count} HTTP requests, {rate_limited} rate-limit responses"
+        )
+    elif english and failed:
+        stats["status"] = "Failed"
+        stats["note"] = (
+            f"Gemini enabled; attempted {attempted} final recommended papers, all failed and used "
+            f"rule-based fallback; {requests_count} HTTP requests, {rate_limited} rate-limit responses"
+        )
+    elif english:
+        stats["status"] = "Success"
+        stats["note"] = (
+            f"Gemini enabled; successfully analyzed {success} final recommended papers; "
+            f"{requests_count} HTTP requests, {rate_limited} rate-limit responses"
+        )
     elif failed and success:
         stats["status"] = "部分成功"
         stats["note"] = (
@@ -373,7 +482,7 @@ def enrich_papers_with_summaries(
             item["analysis"] = _rule_based_summary(item, config)
             item["analysis_source"] = "规则回退"
         enriched.append(item)
-    stats = _finalize_gemini_stats(stats)
+    stats = _finalize_gemini_stats(stats, config)
     if include_stats:
         return enriched, stats
     return enriched
@@ -395,27 +504,61 @@ def _analysis_for_report(paper: dict[str, Any], config: dict[str, Any]) -> dict[
     return _rule_based_summary(paper, config)
 
 
-def _doi_markdown(doi: str) -> str:
+def _doi_markdown(doi: str, english: bool = False) -> str:
     doi_url = _doi_url(doi)
     if not doi_url:
-        return "无"
+        return "None" if english else "无"
     return f"[{doi_url}]({doi_url})"
 
 
-def _journal_metrics_text(paper: dict[str, Any]) -> str:
+def _journal_metrics_text(paper: dict[str, Any], english: bool = False) -> str:
     try:
         impact_factor = float(paper.get("impact_factor"))
     except (TypeError, ValueError):
         impact_factor = 0.0
     if impact_factor <= 0:
-        return "未获取"
+        return "Not available" if english else "未获取"
 
     impact_factor_text = f"{impact_factor:.3f}".rstrip("0").rstrip(".")
     jcr_quartile = str(paper.get("jcr_quartile") or "").strip()
     source = str(paper.get("impact_factor_source") or "").strip()
-    parts = [impact_factor_text, jcr_quartile or "JCR 未获取"]
-    suffix = f"（{source}）" if source else ""
+    parts = [impact_factor_text, jcr_quartile or ("JCR not available" if english else "JCR 未获取")]
+    suffix = f"({source})" if english and source else f"（{source}）" if source else ""
     return " / ".join(parts) + suffix
+
+
+def _status_text(value: Any, english: bool = False) -> str:
+    text = str(value or ("Unknown" if english else "未知"))
+    if not english:
+        return text
+    return {
+        "成功": "Success",
+        "失败": "Failed",
+        "部分成功": "Partial success",
+        "未调用": "Not called",
+        "未知": "Unknown",
+    }.get(text, text)
+
+
+def _note_text(value: Any, english: bool = False) -> str:
+    text = str(value or "")
+    if not english:
+        return text
+    replacements = [
+        ("缺少 SEMANTIC_SCHOLAR_API_KEY", "Missing SEMANTIC_SCHOLAR_API_KEY"),
+        ("缺少 ELSEVIER_API_KEY", "Missing ELSEVIER_API_KEY"),
+        ("缺少 EASYSCHOLAR_SECRET_KEY", "Missing EASYSCHOLAR_SECRET_KEY"),
+        ("使用配置表影响因子作为备用值", "using configured impact factors as fallback"),
+        ("API 已成功调用", "API called successfully"),
+        ("API 调用失败", "API call failed"),
+        ("API 已调用", "API called"),
+        ("次成功", "successful request(s)"),
+        ("次失败", "failed request(s)"),
+        ("篇论文匹配到影响因子", "paper(s) matched impact factors"),
+    ]
+    for source, target in replacements:
+        text = text.replace(source, target)
+    return text
 
 
 def render_markdown_report(
@@ -427,115 +570,190 @@ def render_markdown_report(
 ) -> str:
     report_date = report_date or date.today()
     total_found = total_found if total_found is not None else len(papers)
-    lines = [
-        "# 每周文献推送报告",
-        "",
-        f"报告日期：{report_date.isoformat()}",
-        "",
-        f"本周共检索到 {total_found} 篇候选论文，经过筛选后推荐 {len(papers)} 篇高质量文献。",
-        "",
-    ]
+    english = _is_english(config)
+    if english:
+        lines = [
+            "# Weekly Literature Alert",
+            "",
+            f"Report date: {report_date.isoformat()}",
+            "",
+            f"This run found {total_found} candidate papers and recommends {len(papers)} high-priority papers after filtering.",
+            "",
+        ]
+    else:
+        lines = [
+            "# 每周文献推送报告",
+            "",
+            f"报告日期：{report_date.isoformat()}",
+            "",
+            f"本周共检索到 {total_found} 篇候选论文，经过筛选后推荐 {len(papers)} 篇高质量文献。",
+            "",
+        ]
 
     if not papers:
-        lines.extend(["本周未筛选到足够相关的新论文。", ""])
-        _append_run_report(lines, run_report)
+        lines.extend(["No sufficiently relevant new papers were selected in this run." if english else "本周未筛选到足够相关的新论文。", ""])
+        _append_run_report(lines, run_report, english=english)
         return "\n".join(lines)
 
     for index, paper in enumerate(papers, start=1):
         analysis = _analysis_for_report(paper, config)
         lines.extend(
             [
-                f"## {index}. {paper.get('title') or '未命名论文'}",
+                f"## {index}. {paper.get('title') or ('Untitled paper' if english else '未命名论文')}",
                 "",
-                f"**作者**：{_authors_text(paper.get('authors', []))}",
-                f"**期刊/平台**：{paper.get('venue') or paper.get('source') or '未知'}",
-                f"**SCI 影响因子 / JCR 分区**：{_journal_metrics_text(paper)}",
-                f"**发表时间**：{paper.get('published_date') or '未知'}",
-                f"**DOI**：{_doi_markdown(paper.get('doi', ''))}",
-                f"**相关性评分**：{paper.get('score', 0)}/10",
+                (
+                    f"**Authors**: {_authors_text(paper.get('authors', []), english=True)}"
+                    if english
+                    else f"**作者**：{_authors_text(paper.get('authors', []))}"
+                ),
+                (
+                    f"**Journal/Platform**: {paper.get('venue') or paper.get('source') or 'Unknown'}"
+                    if english
+                    else f"**期刊/平台**：{paper.get('venue') or paper.get('source') or '未知'}"
+                ),
+                (
+                    f"**SCI Impact Factor / JCR Quartile**: {_journal_metrics_text(paper, english=True)}"
+                    if english
+                    else f"**SCI 影响因子 / JCR 分区**：{_journal_metrics_text(paper)}"
+                ),
+                (
+                    f"**Publication Date**: {paper.get('published_date') or 'Unknown'}"
+                    if english
+                    else f"**发表时间**：{paper.get('published_date') or '未知'}"
+                ),
+                f"**DOI**: {_doi_markdown(paper.get('doi', ''), english=True)}" if english else f"**DOI**：{_doi_markdown(paper.get('doi', ''))}",
+                f"**Relevance Score**: {paper.get('score', 0)}/10" if english else f"**相关性评分**：{paper.get('score', 0)}/10",
                 "",
-                "### 1. 它真正想解决的问题是什么？",
+                "### 1. What problem is it really trying to solve?" if english else "### 1. 它真正想解决的问题是什么？",
                 "",
                 analysis["problem"],
                 "",
-                "### 2. 它声称的贡献是什么？",
+                "### 2. What contribution does it claim?" if english else "### 2. 它声称的贡献是什么？",
                 "",
                 analysis["contribution"],
                 "",
-                "### 3. 它的主要结论是什么？",
+                "### 3. What are its main conclusions?" if english else "### 3. 它的主要结论是什么？",
                 "",
                 analysis["conclusion"],
                 "",
             ]
         )
-    _append_run_report(lines, run_report)
+    _append_run_report(lines, run_report, english=english)
     return "\n".join(lines)
 
 
-def _append_run_report(lines: list[str], run_report: dict[str, Any] | None) -> None:
+def _append_run_report(lines: list[str], run_report: dict[str, Any] | None, english: bool = False) -> None:
     if not run_report:
         return
-    lines.extend(
-        [
-            "## 运行报告",
-            "",
-            f"**检索时间范围**：{run_report.get('start_date', '未知')} 至 {run_report.get('end_date', '未知')}",
-            f"**原始检索结果**：{run_report.get('raw_count', 0)} 条",
-            f"**去重后结果**：{run_report.get('unique_count', 0)} 条",
-            f"**未推送过结果**：{run_report.get('unseen_count', 0)} 条",
-            f"**本次推荐结果**：{run_report.get('selected_count', 0)} 条",
-            "",
-            "| 数据库 | API 调用状态 | 检索结果数 | 备注 |",
-            "| --- | --- | ---: | --- |",
-        ]
-    )
+    if english:
+        lines.extend(
+            [
+                "## Run Report",
+                "",
+                f"**Search window**: {run_report.get('start_date', 'Unknown')} to {run_report.get('end_date', 'Unknown')}",
+                f"**Raw search results**: {run_report.get('raw_count', 0)}",
+                f"**After deduplication**: {run_report.get('unique_count', 0)}",
+                f"**Not previously pushed**: {run_report.get('unseen_count', 0)}",
+                f"**Recommended in this run**: {run_report.get('selected_count', 0)}",
+                "",
+                "| Database | API status | Results | Notes |",
+                "| --- | --- | ---: | --- |",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "## 运行报告",
+                "",
+                f"**检索时间范围**：{run_report.get('start_date', '未知')} 至 {run_report.get('end_date', '未知')}",
+                f"**原始检索结果**：{run_report.get('raw_count', 0)} 条",
+                f"**去重后结果**：{run_report.get('unique_count', 0)} 条",
+                f"**未推送过结果**：{run_report.get('unseen_count', 0)} 条",
+                f"**本次推荐结果**：{run_report.get('selected_count', 0)} 条",
+                "",
+                "| 数据库 | API 调用状态 | 检索结果数 | 备注 |",
+                "| --- | --- | ---: | --- |",
+            ]
+        )
     for source in run_report.get("sources", []):
         lines.append(
             "| {source} | {status} | {count} | {note} |".format(
                 source=str(source.get("source", "未知")).replace("|", "\\|"),
-                status=str(source.get("status", "未知")).replace("|", "\\|"),
+                status=_status_text(source.get("status", "未知"), english=english).replace("|", "\\|"),
                 count=int(source.get("returned_count", 0) or 0),
-                note=str(source.get("note", "")).replace("|", "\\|"),
+                note=_note_text(source.get("note", ""), english=english).replace("|", "\\|"),
             )
         )
     lines.append("")
     journal_metrics = run_report.get("journal_metrics") or {}
     if journal_metrics:
-        lines.extend(
-            [
-                "",
-                "**期刊指标查询**：{status}；查询 {queried} 个期刊，匹配 {matched} 篇论文。{note}".format(
-                    status=str(journal_metrics.get("status", "未知")),
-                    queried=int(journal_metrics.get("queried_count", 0) or 0),
-                    matched=int(journal_metrics.get("matched_count", 0) or 0),
-                    note=str(journal_metrics.get("note", "")),
-                ),
-                "",
-            ]
-        )
+        if english:
+            lines.extend(
+                [
+                    "",
+                    "**Journal metrics lookup**: {status}; queried {queried} journals, matched {matched} papers. {note}".format(
+                        status=_status_text(journal_metrics.get("status", "未知"), english=True),
+                        queried=int(journal_metrics.get("queried_count", 0) or 0),
+                        matched=int(journal_metrics.get("matched_count", 0) or 0),
+                        note=_note_text(journal_metrics.get("note", ""), english=True),
+                    ),
+                    "",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "",
+                    "**期刊指标查询**：{status}；查询 {queried} 个期刊，匹配 {matched} 篇论文。{note}".format(
+                        status=str(journal_metrics.get("status", "未知")),
+                        queried=int(journal_metrics.get("queried_count", 0) or 0),
+                        matched=int(journal_metrics.get("matched_count", 0) or 0),
+                        note=str(journal_metrics.get("note", "")),
+                    ),
+                    "",
+                ]
+            )
     gemini_stats = run_report.get("gemini") or {}
     if gemini_stats:
-        lines.extend(
-            [
-                "**Gemini API 调用**：{status}；尝试 {attempted} 篇，成功 {success} 篇，失败 {failed} 篇，规则回退 {fallback} 篇；HTTP 请求 {requests} 次，429 限流 {rate_limited} 次。{note}".format(
-                    status=str(gemini_stats.get("status", "未知")),
-                    attempted=int(gemini_stats.get("attempted_count", 0) or 0),
-                    success=int(gemini_stats.get("success_count", 0) or 0),
-                    failed=int(gemini_stats.get("failed_count", 0) or 0),
-                    fallback=int(gemini_stats.get("fallback_count", 0) or 0),
-                    requests=int(gemini_stats.get("request_count", 0) or 0),
-                    rate_limited=int(gemini_stats.get("rate_limited_count", 0) or 0),
-                    note=str(gemini_stats.get("note", "")),
-                ),
-                "",
-            ]
-        )
+        if english:
+            lines.extend(
+                [
+                    "**Gemini API usage**: {status}; attempted {attempted} papers, {success} succeeded, {failed} failed, {fallback} used rule-based fallback; {requests} HTTP requests, {rate_limited} rate-limit responses. {note}".format(
+                        status=_status_text(gemini_stats.get("status", "未知"), english=True),
+                        attempted=int(gemini_stats.get("attempted_count", 0) or 0),
+                        success=int(gemini_stats.get("success_count", 0) or 0),
+                        failed=int(gemini_stats.get("failed_count", 0) or 0),
+                        fallback=int(gemini_stats.get("fallback_count", 0) or 0),
+                        requests=int(gemini_stats.get("request_count", 0) or 0),
+                        rate_limited=int(gemini_stats.get("rate_limited_count", 0) or 0),
+                        note=_note_text(gemini_stats.get("note", ""), english=True),
+                    ),
+                    "",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "**Gemini API 调用**：{status}；尝试 {attempted} 篇，成功 {success} 篇，失败 {failed} 篇，规则回退 {fallback} 篇；HTTP 请求 {requests} 次，429 限流 {rate_limited} 次。{note}".format(
+                        status=str(gemini_stats.get("status", "未知")),
+                        attempted=int(gemini_stats.get("attempted_count", 0) or 0),
+                        success=int(gemini_stats.get("success_count", 0) or 0),
+                        failed=int(gemini_stats.get("failed_count", 0) or 0),
+                        fallback=int(gemini_stats.get("fallback_count", 0) or 0),
+                        requests=int(gemini_stats.get("request_count", 0) or 0),
+                        rate_limited=int(gemini_stats.get("rate_limited_count", 0) or 0),
+                        note=str(gemini_stats.get("note", "")),
+                    ),
+                    "",
+                ]
+            )
 
 
-def markdown_to_html(markdown_text: str) -> str:
+def markdown_to_html(markdown_text: str, config: dict[str, Any] | None = None) -> str:
+    lang = "en" if config and _is_english(config) else "zh-CN"
     body = markdown.markdown(markdown_text, extensions=["extra", "sane_lists"])
     return f"""<!doctype html>
-<html lang="zh-CN">
+<html lang="{lang}">
 <head>
   <meta charset="utf-8">
   <style>
@@ -553,14 +771,19 @@ def markdown_to_html(markdown_text: str) -> str:
 </html>"""
 
 
-def save_reports(markdown_text: str, report_dir: Path, report_date: date | None = None) -> tuple[Path, Path]:
+def save_reports(
+    markdown_text: str,
+    report_dir: Path,
+    report_date: date | None = None,
+    config: dict[str, Any] | None = None,
+) -> tuple[Path, Path]:
     report_date = report_date or date.today()
     report_dir.mkdir(parents=True, exist_ok=True)
     latest_md = report_dir / "weekly_report.md"
     latest_html = report_dir / "weekly_report.html"
     dated_md = report_dir / f"weekly_report_{report_date.isoformat()}.md"
     dated_html = report_dir / f"weekly_report_{report_date.isoformat()}.html"
-    html_text = markdown_to_html(markdown_text)
+    html_text = markdown_to_html(markdown_text, config=config)
     for path, content in [(latest_md, markdown_text), (dated_md, markdown_text), (latest_html, html_text), (dated_html, html_text)]:
         path.write_text(content, encoding="utf-8")
     return latest_md, latest_html

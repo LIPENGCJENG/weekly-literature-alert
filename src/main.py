@@ -239,8 +239,8 @@ def run(config_path: Path, dry_run: bool = False) -> dict[str, Any]:
         total_found=len(unique_papers),
         run_report=run_report,
     )
-    latest_md, latest_html = save_reports(markdown_report, report_dir, report_date=today)
-    html_report = markdown_to_html(markdown_report)
+    latest_md, latest_html = save_reports(markdown_report, report_dir, report_date=today, config=config)
+    html_report = markdown_to_html(markdown_report, config=config)
     sent = False if dry_run else send_email(html_report, config, report_date=today, markdown_body=markdown_report)
 
     if not dry_run:

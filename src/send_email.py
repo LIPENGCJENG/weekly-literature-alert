@@ -9,6 +9,24 @@ from typing import Any
 LOGGER = logging.getLogger(__name__)
 
 
+def _is_english(config: dict[str, Any]) -> bool:
+    language = str(config.get("email", {}).get("language", "Chinese")).strip().lower()
+    return language in {"english", "en", "英语"}
+
+
+def _email_subject(config: dict[str, Any], report_date: date) -> str:
+    email_config = config.get("email", {})
+    english = _is_english(config)
+    configured_prefix = str(email_config.get("subject_prefix", "")).strip()
+    if english and configured_prefix in {"", "[每周文献推送]"}:
+        prefix = "[Weekly Literature Alert]"
+    else:
+        prefix = configured_prefix or "[每周文献推送]"
+    default_topic = "Latest Literature Update" if english else "复合固态电解质与锂离子传导机理"
+    topic = str(email_config.get("subject_topic", default_topic)).strip() or default_topic
+    return f"{prefix} {topic} - {report_date.isoformat()}"
+
+
 def build_email_message(
     html_body: str,
     config: dict[str, Any],
@@ -16,11 +34,10 @@ def build_email_message(
     markdown_body: str | None = None,
 ) -> MIMEMultipart:
     report_date = report_date or date.today()
-    email_config = config.get("email", {})
     profile = config.get("profile", {})
     sender = os.getenv("SMTP_USER", profile.get("email_from", ""))
     recipient = os.getenv("EMAIL_TO", profile.get("email_to", ""))
-    subject = f"{email_config.get('subject_prefix', '[每周文献推送]')} 复合固态电解质与锂离子传导机理 - {report_date.isoformat()}"
+    subject = _email_subject(config, report_date)
 
     message = MIMEMultipart("alternative")
     message["Subject"] = subject

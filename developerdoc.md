@@ -96,6 +96,15 @@ venues:
 
 程序会优先使用 EasyScholar 查询 SCI 影响因子和 JCR 分区。如果没有配置 `EASYSCHOLAR_SECRET_KEY`、接口失败或期刊未匹配，则使用这里的备用数值。
 
+### 邮件语言
+
+```yaml
+email:
+  language: "Chinese"
+```
+
+`language` 默认是 `Chinese`，会生成中文 Markdown/HTML 报告并发送中文邮件。设置为 `English`、`en` 或 `英语` 时，报告正文、运行报告、邮件主题默认文案和 Gemini 提示词都会切换为英文。
+
 ### 评分权重
 
 ```yaml

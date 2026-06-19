@@ -98,6 +98,23 @@ def test_email_body_generation():
     assert message.is_multipart()
 
 
+def test_email_to_secret_does_not_override_profile_email(monkeypatch):
+    monkeypatch.setenv("EMAIL_TO", "secret-recipient@example.com")
+    config = {
+        "profile": {"email_to": "profile-recipient@example.com"},
+        "email": {"subject_prefix": "[每周文献推送]"},
+    }
+
+    message = build_email_message(
+        "<p>Report</p>",
+        config,
+        report_date=date(2026, 6, 16),
+        markdown_body="Report",
+    )
+
+    assert message["To"] == "profile-recipient@example.com"
+
+
 def test_english_email_language_generation():
     config = {
         "profile": {"email_to": "reader@example.com"},

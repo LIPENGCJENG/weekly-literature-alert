@@ -120,13 +120,12 @@ email:
 - `SMTP_PORT`
 - `SMTP_USER`
 - `SMTP_PASSWORD`
-- `EMAIL_TO`
 - `SEMANTIC_SCHOLAR_API_KEY`
 - `ELSEVIER_API_KEY`
 - `EASYSCHOLAR_SECRET_KEY`
 - `GEMINI_API_KEY`
 
-其中 SMTP 和 `EMAIL_TO` 用于发送邮件。其余 API Key 可以先不填，程序会跳过未配置的数据源或功能。
+其中 SMTP 用于发送邮件，收件邮箱只从 `config.yaml` 的 `profile.email_to` 读取。其余 API Key 可以先不填，程序会跳过未配置的数据源或功能。
 
 不要把邮箱密码或 API Key 写进 `config.yaml`。
 

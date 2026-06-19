@@ -36,7 +36,7 @@ def build_email_message(
     report_date = report_date or date.today()
     profile = config.get("profile", {})
     sender = os.getenv("SMTP_USER", profile.get("email_from", ""))
-    recipient = os.getenv("EMAIL_TO", profile.get("email_to", ""))
+    recipient = profile.get("email_to", "")
     subject = _email_subject(config, report_date)
 
     message = MIMEMultipart("alternative")
@@ -54,7 +54,7 @@ def send_email(html_body: str, config: dict[str, Any], report_date: date | None 
     smtp_port = int(os.getenv("SMTP_PORT", config.get("email", {}).get("smtp_port", 587)))
     smtp_user = os.getenv("SMTP_USER", "")
     smtp_password = os.getenv("SMTP_PASSWORD", "")
-    recipient = os.getenv("EMAIL_TO", config.get("profile", {}).get("email_to", ""))
+    recipient = config.get("profile", {}).get("email_to", "")
     use_tls = bool(config.get("email", {}).get("use_tls", True))
 
     if not all([smtp_host, smtp_user, smtp_password, recipient]) or "example.com" in recipient:

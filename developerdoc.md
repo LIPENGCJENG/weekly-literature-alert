@@ -50,7 +50,7 @@ profile:
   email_to: "your_email@example.com"
 ```
 
-在 GitHub Actions 中，建议用 `EMAIL_TO` Secret 覆盖收件邮箱。
+邮件收件人只从 `profile.email_to` 读取；GitHub Actions 不再使用 `EMAIL_TO` Secret 覆盖它。
 
 ### 检索范围
 
@@ -180,10 +180,9 @@ export SMTP_HOST="smtp.example.com"
 export SMTP_PORT="587"
 export SMTP_USER="your_account@example.com"
 export SMTP_PASSWORD="your_password_or_app_password"
-export EMAIL_TO="your_email@example.com"
 ```
 
-如果邮件参数缺失，程序仍会生成报告，只是不发送邮件。
+收件邮箱在 `config.yaml` 的 `profile.email_to` 中配置。如果邮件参数或收件邮箱缺失，程序仍会生成报告，只是不发送邮件。
 
 ## GitHub Secrets
 
@@ -197,7 +196,6 @@ export EMAIL_TO="your_email@example.com"
 - `SMTP_PORT`
 - `SMTP_USER`
 - `SMTP_PASSWORD`
-- `EMAIL_TO`
 - `GEMINI_API_KEY`，可选，用于增强最终推荐论文分析；
 - `SEMANTIC_SCHOLAR_API_KEY`，可选，用于启用 Semantic Scholar 检索；
 - `ELSEVIER_API_KEY`，可选，用于启用 Elsevier Scopus 检索；
@@ -307,7 +305,7 @@ pytest -q
 - 邮箱服务商要求使用应用专用密码，而不是登录密码；
 - 邮箱没有开启 SMTP；
 - GitHub Secrets 名称写错；
-- `EMAIL_TO` 仍是示例邮箱；
+- `config.yaml` 中的 `profile.email_to` 仍是示例邮箱；
 - 公司或学校邮箱阻止第三方 SMTP 登录。
 
 排查建议：

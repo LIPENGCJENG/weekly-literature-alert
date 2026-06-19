@@ -129,7 +129,7 @@ ranking:
 email:
   subject_prefix: "[每周文献推送]"
   # Options: "Chinese" or "English"
-  language: "Chinese"
+  language: "English"
   smtp_port: 587
   use_tls: true
 

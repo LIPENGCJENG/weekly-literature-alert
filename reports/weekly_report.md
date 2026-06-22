@@ -2,129 +2,129 @@
 
 Report date: 2026-06-22
 
-This run found 93 candidate papers and recommends 5 high-priority papers after filtering.
+This run found 96 candidate papers and recommends 5 high-priority papers after filtering.
 
-## 1. PCL-grafted polyrotaxane networks for solid polymer electrolytes
+## 1. Recent Advances of Atomic/Molecular Layer Deposition Engineering Silicon Interface for Lithium-Ion Batteries
 
-**Authors**: R T. Wang, Y Zhang, Xiao-Long Han, Yu-Kun Gao, Ting-Ting You, Penggang Yin
-**Journal/Platform**: Polymer
-**SCI Impact Factor / JCR Quartile**: 5.1 / Q1(EasyScholar)
-**Publication Date**: 2026-06-19
-**DOI**: [https://doi.org/10.1016/j.polymer.2026.130413](https://doi.org/10.1016/j.polymer.2026.130413)
-**Relevance Score**: 4.92/10
+**Authors**: Haocheng Wen, Yuhui Xu, Xiaoxue Wang, Ming Li, Lulu Zhang, Huaming Qian et al.
+**Journal/Platform**: Nano-Micro Letters
+**SCI Impact Factor / JCR Quartile**: 38.5 / Q1(EasyScholar)
+**Publication Date**: 2026-06-22
+**DOI**: [https://doi.org/10.1007/s40820-026-02259-9](https://doi.org/10.1007/s40820-026-02259-9)
+**Relevance Score**: 1.93/10
 
 ### 1. What problem is it really trying to solve?
 
-The study addresses the inherent trade-off between mechanical strength and ionic conductivity in solid polymer electrolytes (SPEs) for lithium-ion batteries, specifically focusing on the limitations of conventional linear polymer electrolytes and the challenges of interfacial resistance in composite systems.
+The severe mechanical degradation and unstable solid-electrolyte interphase (SEI) formation caused by the significant volume expansion of silicon anodes during lithiation/delithiation cycles.
 
 ### 2. What contribution does it claim?
 
-The authors propose a novel architecture utilizing polyrotaxane networks grafted with polycaprolactone (PCL) chains to create a flexible, supramolecular electrolyte framework designed to enhance ion transport pathways and structural integrity.
+A comprehensive review of ALD/MLD techniques for silicon anode interface engineering, specifically categorizing their role in mechanical confinement, chemical SEI stabilization, and the optimization of interfacial charge transfer kinetics.
 
 ### 3. What are its main conclusions?
 
-The authors conclude that the PCL-grafted polyrotaxane network architecture successfully decouples mechanical robustness from ionic conductivity, claiming that the sliding motion of the macrocycles within the polyrotaxane structure facilitates improved lithium-ion mobility compared to traditional cross-linked polymer networks.
+ALD/MLD is presented as a viable strategy for mitigating silicon's volume-related failure modes; the authors conclude that future progress depends on precise atomic-scale interface design to simultaneously address structural stability and ion/electron transport efficiency.
 
-## 2. Structural and room-temperature ionic transport properties of a PVDF-HFP/SN solid polymer electrolyte reinforced with a GO–CeO₂ hybrid nanofiller
+## 2. Tailored Temperature‐Responsive Solvation Structures Enabling Ultra‐Wide‐Temperature Quasi‐Solid‐State Lithium Metal Batteries From −70°C to 60°C
 
-**Authors**: Muddassir Zamurad, Aneesa Zafar, Sajal Arwish, Khizar Hayat Khan, Iqra Rani, Hazrat Hussain
-**Journal/Platform**: Next Materials
-**SCI Impact Factor / JCR Quartile**: 4.7 / Q2(EasyScholar)
+**Authors**: Xuanfeng Chen, Shuai Zhao, Ming Hao, Zhihao Guo, Sisi Wang, Feixiang Wu
+**Journal/Platform**: Advanced Energy Materials
+**SCI Impact Factor / JCR Quartile**: 26 / Q1(EasyScholar)
+**Publication Date**: 2026-06-19
+**DOI**: [https://doi.org/10.1002/aenm.71202](https://doi.org/10.1002/aenm.71202)
+**Relevance Score**: 1.3/10
+
+### 1. What problem is it really trying to solve?
+
+The inherent trade-off in gel polymer electrolytes between poor ionic conductivity at low temperatures and insufficient electrochemical/interfacial stability at high temperatures, which limits the operational range of lithium metal batteries.
+
+### 2. What contribution does it claim?
+
+The authors claim to have developed a temperature-responsive gel polymer electrolyte (TRGPE) using ethylene glycol diacetate (EGD) to modulate Li+ solvation structures. They propose that EGD's multi-mode coordination enables distinct solvation behaviors at different temperatures, which they claim facilitates both low-temperature kinetics and the formation of a Li2O-rich solid electrolyte interphase (SEI) for high-temperature stability.
+
+### 3. What are its main conclusions?
+
+The study concludes that the TRGPE system enables Li//LiCoO2 cells to function across an ultra-wide temperature range from -70°C to 60°C, achieving discharge capacities of 149 mAh g-1 and 180 mAh g-1 respectively, while providing a new design paradigm for wide-temperature electrolyte engineering.
+
+## 3. Silicon-carbon composite anodes for high-energy lithium-ion batteries: challenges, design strategies, and recent advances
+
+**Authors**: Kishore V.S, R. Praveen Surya, J Aakash Kumar, Munusamy Settu, Prabu S, Nithish Kumar M et al.
+**Journal/Platform**: Journal of Solid State Electrochemistry
+**SCI Impact Factor / JCR Quartile**: 3.1 / Q3(EasyScholar)
+**Publication Date**: 2026-06-19
+**DOI**: [https://doi.org/10.1007/s10008-026-06627-8](https://doi.org/10.1007/s10008-026-06627-8)
+**Relevance Score**: 0.15/10
+
+### 1. What problem is it really trying to solve?
+
+The paper addresses the inherent limitations of silicon-based anodes in lithium-ion batteries, specifically the significant volume expansion during lithiation that leads to mechanical degradation, unstable solid electrolyte interphase (SEI) formation, and poor cycling stability.
+
+### 2. What contribution does it claim?
+
+The authors claim to provide a comprehensive review of current design strategies for silicon-carbon (Si/C) composite anodes, categorizing structural engineering approaches and surface modification techniques intended to mitigate mechanical stress and improve electrochemical performance.
+
+### 3. What are its main conclusions?
+
+The authors conclude that while Si/C composites offer a viable pathway toward high-energy-density batteries, practical implementation remains contingent on optimizing the structural integrity of the composite and the stability of the electrode-electrolyte interface through advanced material design.
+
+## 4. Graphdiyne Oxide‐Enabled Solid‐State Proton Battery Exhibiting Superior Rate Capability
+
+**Authors**: Y Huang, Zecheng Xiong, Hongye Liu, Hao Sun, Wei Su, Z J Chen et al.
+**Journal/Platform**: Angewandte Chemie
+**SCI Impact Factor / JCR Quartile**: 1 / JCR not available(配置表)
 **Publication Date**: 2026-06-20
-**DOI**: [https://doi.org/10.1016/j.nxmate.2026.102566](https://doi.org/10.1016/j.nxmate.2026.102566)
-**Relevance Score**: 4.9/10
+**DOI**: [https://doi.org/10.1002/ange.4266547](https://doi.org/10.1002/ange.4266547)
+**Relevance Score**: 0.05/10
 
 ### 1. What problem is it really trying to solve?
 
-The study addresses the inherent limitations of PVDF-HFP-based solid polymer electrolytes, specifically their low ionic conductivity and poor mechanical stability at room temperature, which hinder their practical application in lithium-ion batteries.
+The limited proton conductivity of conventional solid-state electrolytes at room temperature, which hinders the performance and rate capability of solid-state proton batteries.
 
 ### 2. What contribution does it claim?
 
-The authors claim that the incorporation of a GO–CeO2 hybrid nanofiller into the PVDF-HFP/SN matrix creates a synergistic effect that enhances the amorphous phase of the polymer, facilitates lithium-ion transport pathways, and improves the overall electrochemical and mechanical performance of the electrolyte.
+The authors introduce graphdiyne oxide (GDYO) as a novel solid-state electrolyte component, claiming that its integration with phosphoric acid (H3PO4) creates a 3D hydrogen-bonding network that facilitates efficient proton hopping.
 
 ### 3. What are its main conclusions?
 
-The study concludes that the GO–CeO2 hybrid nanofiller effectively optimizes the ionic transport properties and structural integrity of the electrolyte, resulting in improved room-temperature ionic conductivity and electrochemical stability compared to the pristine polymer matrix.
+The GDYO@H3PO4 electrolyte enables a full solid-state proton battery (VHCF//MoO3) that exhibits high rate capability (53.6% retention at 50C) and long-term cycling stability (90.2% retention after 4500 cycles), suggesting GDYO is a viable platform for solid-state battery electrolyte design.
 
-## 3. Multi-ion defect model for space-charge layer formation at LiPON/LixV2O5 electrochemical interfaces
+## 5. Single-Walled Carbon Nanotube Templated Three-Dimensional Porous Si/SiO2 Core–Shell Cylindrical Hybrid Anode Material for Lithium-Ion Batteries
 
-**Authors**: Gregory Pustorino, Leopoldo Jose Tapia-Aracayo, Daniel Halbing, Leonard Brillson, D. Stewart, Yue Qi
-**Journal/Platform**: npj Computational Materials
-**SCI Impact Factor / JCR Quartile**: 13.7 / Q1(EasyScholar)
-**Publication Date**: 2026-06-19
-**DOI**: [https://doi.org/10.1038/s41524-026-02182-y](https://doi.org/10.1038/s41524-026-02182-y)
-**Relevance Score**: 3.02/10
+**Authors**: SeYi Kwon, Jun-Ki Lee
+**Journal/Platform**: Batteries
+**SCI Impact Factor / JCR Quartile**: 1 / JCR not available(配置表)
+**Publication Date**: 2026-06-18
+**DOI**: [https://doi.org/10.3390/batteries12060220](https://doi.org/10.3390/batteries12060220)
+**Relevance Score**: 0.05/10
 
 ### 1. What problem is it really trying to solve?
 
-The limitations of existing space-charge layer (SCL) models in solid-state batteries, which traditionally rely on a single-species (Li-ion only) approximation, failing to account for the complex contributions of multiple ions, vacancies, and electronic species at heterogeneous interfaces.
+The rapid capacity fade of silicon anodes in lithium-ion batteries caused by extreme volumetric expansion (>300%) during lithiation, which leads to particle pulverization and unstable solid electrolyte interphase (SEI) formation.
 
 ### 2. What contribution does it claim?
 
-The authors propose a first-principles, multi-species defect framework to quantify SCL formation and apply it to LiPON/LixV2O5 interfaces. They claim this approach captures spontaneous bidirectional ion transfer (Li-ions and O-species) and electronic charge redistribution that single-species models overlook.
+The authors claim the development of a SWNT-templated 3D porous Si/SiO2 core-shell cylindrical architecture that utilizes residual SiO2 as a mechanical buffer to mitigate volume expansion, synthesized via block copolymer-directed sol-gel assembly and controlled magnesiothermic reduction.
 
 ### 3. What are its main conclusions?
 
-The study concludes that SCL formation is driven by multi-species defect transfer, where the direction of electron transfer and the resulting band-bending (downward vs. upward) are highly dependent on the lithium content (x) in the LixV2O5 phase. The authors conclude that multi-ion modeling is essential for accurately predicting transport properties in solid-state electrochemical devices.
-
-## 4. Interfacial structure engineering of three-phase synergistic continuous composite separators toward efficient lithium-ion transport
-
-**Authors**: X E Wei, Haipeng Ren, 仝洪月, Xiaoqi Zhou, Sen Chen, Jinlei Hu et al.
-**Journal/Platform**: Journal of Energy Storage
-**SCI Impact Factor / JCR Quartile**: 10.7 / Q1(EasyScholar)
-**Publication Date**: 2026-06-19
-**DOI**: [https://doi.org/10.1016/j.est.2026.123248](https://doi.org/10.1016/j.est.2026.123248)
-**Relevance Score**: 2.87/10
-
-### 1. What problem is it really trying to solve?
-
-The study addresses the trade-off between mechanical strength and ionic conductivity in composite solid electrolytes, specifically focusing on the high interfacial resistance and tortuous lithium-ion transport pathways caused by the poor compatibility between ceramic fillers and polymer matrices.
-
-### 2. What contribution does it claim?
-
-The authors claim to develop a three-phase synergistic continuous composite separator that utilizes interfacial structure engineering to optimize lithium-ion transport channels, purportedly enhancing both electrochemical performance and structural integrity.
-
-### 3. What are its main conclusions?
-
-The authors conclude that the engineered interfacial structure facilitates efficient lithium-ion conduction and improves the overall electrochemical stability of the composite separator, though the long-term cycling performance and scalability of the fabrication process remain to be fully validated.
-
-## 5. Construction of PEO composite electrolyte based a hybrid from metal organic framework and sepiolite (ZIF-8@SEP) for lithium-ion batteries
-
-**Authors**: Xingyu Guan, Jinghan Hu, J M Zhang, Kui Wang, Weijiang Huang, 涂春云 et al.
-**Journal/Platform**: Journal of Polymer Engineering
-**SCI Impact Factor / JCR Quartile**: 1.9 / Q3(EasyScholar)
-**Publication Date**: 2026-06-19
-**DOI**: [https://doi.org/10.1515/polyeng-2025-0237](https://doi.org/10.1515/polyeng-2025-0237)
-**Relevance Score**: 2.43/10
-
-### 1. What problem is it really trying to solve?
-
-The low ionic conductivity of polyethylene oxide (PEO) electrolytes at room temperature caused by high polymer crystallinity.
-
-### 2. What contribution does it claim?
-
-The authors claim that incorporating a hybrid ZIF-8@SEP filler synergistically reduces PEO crystallinity and creates efficient ion transport pathways.
-
-### 3. What are its main conclusions?
-
-The study concludes that the ZIF-8@SEP composite electrolyte achieves an ionic conductivity of 6 × 10^-5 S cm^-1 at 60 °C, suggesting the filler improves performance compared to pure PEO.
+The study concludes that the hybrid architecture achieves improved structural stability and electrochemical performance, specifically retaining 90% capacity over 200 cycles at 1 C, with post-cycling analysis supporting the claim that the SiO2 buffer and porous geometry effectively suppress electrode-level swelling.
 
 ## Run Report
 
 **Search window**: 2026-05-23 to 2026-06-22
-**Raw search results**: 97
-**After deduplication**: 93
-**Not previously pushed**: 87
+**Raw search results**: 100
+**After deduplication**: 96
+**Not previously pushed**: 85
 **Recommended in this run**: 5
 
 | Database | API status | Results | Notes |
 | --- | --- | ---: | --- |
 | OpenAlex | Success | 57 | API called successfully，26 successful request(s) |
-| Crossref | Success | 35 | API called successfully，26 successful request(s) |
-| Semantic Scholar | Partial success | 0 | API called，13 successful request(s)，13 failed request(s) |
+| Crossref | Success | 38 | API called successfully，26 successful request(s) |
+| Semantic Scholar | Partial success | 0 | API called，22 successful request(s)，4 failed request(s) |
 | Elsevier Scopus | Success | 5 | API called successfully，26 successful request(s) |
 
 
-**Journal metrics lookup**: Success; queried 71 journals, matched 63 papers. API called，71 successful request(s)，0 failed request(s)；63 paper(s) matched impact factors
+**Journal metrics lookup**: Success; queried 77 journals, matched 64 papers. API called，77 successful request(s)，0 failed request(s)；64 paper(s) matched impact factors
 
 **Gemini API usage**: Success; attempted 5 papers, 5 succeeded, 0 failed, 0 used rule-based fallback; 5 HTTP requests, 0 rate-limit responses. Gemini enabled; successfully analyzed 5 final recommended papers; 5 HTTP requests, 0 rate-limit responses

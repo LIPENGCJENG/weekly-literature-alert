@@ -277,6 +277,12 @@ def _gemini_summary(
     try:
         model = gemini_config.get("model", "gemini-3.1-flash-lite")
         endpoint = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        generation_config: dict[str, Any] = {"responseMimeType": "application/json"}
+        thinking_level = str(gemini_config.get("thinking_level") or "").strip().lower()
+        if thinking_level in {"minimal", "low", "medium", "high"}:
+            generation_config["thinkingConfig"] = {"thinkingLevel": thinking_level}
+        elif thinking_level:
+            LOGGER.warning("Invalid gemini.thinking_level %r; using model default.", thinking_level)
         doi_url = _doi_url(paper.get("doi", "")) or "无"
         if _is_english(config):
             prompt = (
@@ -323,9 +329,7 @@ def _gemini_summary(
                     params={"key": api_key},
                     json={
                         "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {
-                            "responseMimeType": "application/json",
-                        },
+                        "generationConfig": generation_config,
                     },
                     timeout=config.get("search", {}).get("request_timeout", 20),
                 )

@@ -1,5 +1,6 @@
 from datetime import date
 
+import pytest
 import requests
 
 from src.send_email import build_email_message
@@ -249,6 +250,7 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert calls["params"] == {"key": "test-key"}
     generation_config = calls["json"]["generationConfig"]
     assert generation_config["responseMimeType"] == "application/json"
+    assert "thinkingConfig" not in generation_config
     deprecated_parameters = {"temperature", "topP", "topK", "top_p", "top_k", "thinkingBudget", "thinking_budget"}
     assert deprecated_parameters.isdisjoint(generation_config)
     assert deprecated_parameters.isdisjoint(generation_config.get("thinkingConfig", {}))
@@ -256,6 +258,51 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert "你现在扮演一个严格的审稿人" in prompt
     assert "不要总结这篇论文" in prompt
     assert "它的主要结论是什么？" in prompt
+
+
+@pytest.mark.parametrize("level", ["minimal", "low", "medium", "high", " HIGH "])
+def test_gemini_summary_sends_configured_thinking_level(monkeypatch, level):
+    calls = {}
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls["json"] = json
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    result = _gemini_summary(
+        {"title": "Selected paper"},
+        {"gemini": {"thinking_level": level}},
+    )
+
+    assert result["conclusion"] == "主要结论"
+    assert calls["json"]["generationConfig"] == {
+        "responseMimeType": "application/json",
+        "thinkingConfig": {"thinkingLevel": level.strip().lower()},
+    }
+
+
+@pytest.mark.parametrize("level", ["", None, " ", "invalid", 123])
+def test_gemini_summary_uses_default_for_empty_or_invalid_thinking_level(monkeypatch, caplog, level):
+    calls = {}
+
+    def fake_post(url, params=None, json=None, timeout=None):
+        calls["json"] = json
+        return FakeGeminiResponse()
+
+    monkeypatch.setenv("GEMINI_API_KEY", "test-key")
+    monkeypatch.setattr("src.summarize_papers.requests.post", fake_post)
+
+    result = _gemini_summary(
+        {"title": "Selected paper"},
+        {"gemini": {"thinking_level": level}},
+    )
+
+    assert result["conclusion"] == "主要结论"
+    assert calls["json"]["generationConfig"] == {"responseMimeType": "application/json"}
+    if level in ("invalid", 123):
+        assert "Invalid gemini.thinking_level" in caplog.text
 
 
 def test_gemini_summary_uses_english_prompt_when_configured(monkeypatch):

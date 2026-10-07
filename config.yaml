@@ -135,6 +135,8 @@ email:
 
 gemini:
   model: "gemini-3.8-flash"
+  # Empty uses model default. Gemini 3.8 Flash supports low, medium, high.
+  thinking_level: ""
   enable_if_key_present: true
   min_interval_seconds: 15
   retry_attempts: 2

@@ -133,7 +133,8 @@ easyscholar:
 
 ```yaml
 gemini:
-  model: "gemini-3.1-flash-lite"
+  model: "gemini-3.8-flash"
+  thinking_level: ""
   enable_if_key_present: true
   min_interval_seconds: 15
   retry_attempts: 2
@@ -150,9 +151,11 @@ gemini:
 
 ### Gemini 参数兼容性
 
-根据 2026-10-07 的 Gemini 参数弃用通知，请求不再发送 `temperature`、`topP` / `top_p`、`topK` / `top_k` 或 `thinkingBudget` / `thinking_budget`。采样设置和思考等级均使用模型默认值，只保留 `responseMimeType: "application/json"` 以获取结构化分析结果。
+根据 2026-10-07 的 Gemini 参数弃用通知，请求不再发送 `temperature`、`topP` / `top_p`、`topK` / `top_k` 或 `thinkingBudget` / `thinking_budget`。采样设置使用模型默认值，并保留 `responseMimeType: "application/json"` 以获取结构化分析结果。
 
-当前继续使用 `generateContent` 接口和配置中的 `gemini-3.1-flash-lite` 模型。如后续需要指定思考等级，应使用 `thinkingConfig.thinkingLevel`，并核对所选模型支持的等级，参见 [Gemini 官方思考参数文档](https://ai.google.dev/gemini-api/docs/generate-content/thinking)。
+`gemini.thinking_level` 控制思考等级：留空、设为 `null` 或省略时使用模型默认值；填写 `minimal`、`low`、`medium` 或 `high` 时，通过 `generateContent` 的 `generationConfig.thinkingConfig.thinkingLevel` 发送。支持大小写和首尾空格，无效选项会记录警告并使用默认值。
+
+各模型支持的等级不同：当前配置的 `gemini-3.8-flash` 支持 `low`、`medium`（默认）和 `high`，不支持 `minimal`；`gemini-3.1-flash-lite` 支持全部四个等级。切换模型时请核对 [Gemini 官方思考参数文档](https://ai.google.dev/gemini-api/docs/generate-content/thinking)。如果 API 拒绝不支持的等级，程序仍按原有逻辑回退到规则分析。
 
 ## 本地运行
 

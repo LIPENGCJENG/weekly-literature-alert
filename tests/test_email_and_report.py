@@ -247,6 +247,11 @@ def test_gemini_summary_uses_configured_flash_lite_model(monkeypatch):
     assert result == {"problem": "真正要解决的问题", "contribution": "声称的贡献", "conclusion": "主要结论"}
     assert "models/gemini-3.1-flash-lite:generateContent" in calls["url"]
     assert calls["params"] == {"key": "test-key"}
+    generation_config = calls["json"]["generationConfig"]
+    assert generation_config["responseMimeType"] == "application/json"
+    deprecated_parameters = {"temperature", "topP", "topK", "top_p", "top_k", "thinkingBudget", "thinking_budget"}
+    assert deprecated_parameters.isdisjoint(generation_config)
+    assert deprecated_parameters.isdisjoint(generation_config.get("thinkingConfig", {}))
     prompt = calls["json"]["contents"][0]["parts"][0]["text"]
     assert "你现在扮演一个严格的审稿人" in prompt
     assert "不要总结这篇论文" in prompt

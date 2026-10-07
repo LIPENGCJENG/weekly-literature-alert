@@ -148,6 +148,12 @@ gemini:
 
 如果 Gemini 调用失败，程序会自动回退到规则分析，不会中断邮件推送。
 
+### Gemini 参数兼容性
+
+根据 2026-10-07 的 Gemini 参数弃用通知，请求不再发送 `temperature`、`topP` / `top_p`、`topK` / `top_k` 或 `thinkingBudget` / `thinking_budget`。采样设置和思考等级均使用模型默认值，只保留 `responseMimeType: "application/json"` 以获取结构化分析结果。
+
+当前继续使用 `generateContent` 接口和配置中的 `gemini-3.1-flash-lite` 模型。如后续需要指定思考等级，应使用 `thinkingConfig.thinkingLevel`，并核对所选模型支持的等级，参见 [Gemini 官方思考参数文档](https://ai.google.dev/gemini-api/docs/generate-content/thinking)。
+
 ## 本地运行
 
 只生成报告、不发送邮件：

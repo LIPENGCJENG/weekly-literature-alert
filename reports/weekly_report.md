@@ -1,130 +1,130 @@
 # Weekly Literature Alert
 
-Report date: 2026-11-16
+Report date: 2026-11-23
 
-This run found 98 candidate papers and recommends 5 high-priority papers after filtering.
+This run found 68 candidate papers and recommends 5 high-priority papers after filtering.
 
-## 1. Supercritical CO2–assisted construction of porous LLZO–Al–Ga/PVDF–HFP composite electrolytes for high-performance quasi-solid-state lithium batteries
+## 1. Diamino-triazine hydrogen-bonded organic frameworks as high-performance solid-state electrolytes for lithium metal batteries
 
-**Authors**: Chenghao Zhao, Wei Wei, Zhiyi Li, Zhijun Liu
+**Authors**: Xinyao Sun, Yicong Wang, Xiang‐Yu Zhang, Yao Zhang, Yanfang Gao
+**Journal/Platform**: Journal of Energy Storage
+**SCI Impact Factor / JCR Quartile**: 10.7 / Q1(EasyScholar)
+**Publication Date**: 2026-11-20
+**DOI**: [https://doi.org/10.1016/j.est.2026.125868](https://doi.org/10.1016/j.est.2026.125868)
+**Relevance Score**: 5.2/10
+
+### 1. What problem is it really trying to solve?
+
+The work addresses the performance limitations of solid-state electrolytes for lithium metal batteries, specifically within the research context of composite and polymer electrolytes, lithium-ion conduction pathways, and filler-matrix interface effects.
+
+### 2. What contribution does it claim?
+
+The authors claim the design and application of diamino-triazine hydrogen-bonded organic frameworks (HOFs) as high-performance solid-state electrolytes for lithium metal batteries.
+
+### 3. What are its main conclusions?
+
+Based strictly on the provided title and contextual metadata, the authors claim that diamino-triazine HOFs function as high-performance electrolytes; however, specific quantitative conclusions, conduction metrics, and electrochemical stability findings cannot be verified due to the lack of detailed experimental data in the provided text.
+
+## 2. Trimethyl borate as a bifunctional additive for PEO-based solid polymer electrolytes
+
+**Authors**: Jie Li, Shaotong Fu, Xue Wang, Qiang Li, Mingfu Yu, Zhichao Xue et al.
 **Journal/Platform**: Journal of Power Sources
 **SCI Impact Factor / JCR Quartile**: 8.6 / Q1(EasyScholar)
-**Publication Date**: 2026-11-14
-**DOI**: [https://doi.org/10.1016/j.jpowsour.2026.241977](https://doi.org/10.1016/j.jpowsour.2026.241977)
+**Publication Date**: 2026-11-22
+**DOI**: [https://doi.org/10.1016/j.jpowsour.2026.242030](https://doi.org/10.1016/j.jpowsour.2026.242030)
 **Relevance Score**: 5.1/10
 
 ### 1. What problem is it really trying to solve?
 
-The work targets interfacial transport and architectural limitations in composite polymer-ceramic electrolytes for quasi-solid-state lithium batteries, specifically focusing on lithium-ion conduction mechanisms and ceramic filler interface compatibility between Al/Ga-doped LLZO and a PVDF-HFP matrix.
+Addressing the limitations of poly(ethylene oxide) (PEO)-based solid polymer electrolytes, specifically regarding lithium-ion conduction mechanisms and interface stability in solid-state electrolyte systems.
 
 ### 2. What contribution does it claim?
 
-The authors claim a processing methodology utilizing supercritical CO2 to fabricate a porous composite electrolyte comprising Al/Ga co-doped LLZO within a PVDF-HFP matrix intended for high-performance quasi-solid-state lithium batteries.
+The authors claim to introduce trimethyl borate as a bifunctional additive to enhance the performance and interface behavior of PEO-based solid polymer electrolytes.
 
 ### 3. What are its main conclusions?
 
-Based strictly on the available title and limited context metadata, the implied conclusion is that supercritical CO2-assisted porous structuring enables high-performance quasi-solid-state lithium battery operation; however, no quantitative performance metrics, mechanistic findings, or specific experimental outcomes are disclosed in the provided source record to verify or support these claims.
+The specific empirical conclusions and the extent to which the bifunctional mechanism is supported by evidence cannot be validated, as the provided metadata and abstract lack experimental results, electrochemical data, and mechanistic proof.
 
-## 2. One-dimensional architectures in polymer solid electrolytes: design principles, ion-transport mechanisms and practical implementation
+## 3. Electrospun fibrous solid-state electrolytes for metal batteries: From polymer networks to ceramic scaffolds
 
-**Authors**: Wang T.
-**Journal/Platform**: Chemical Science
-**SCI Impact Factor / JCR Quartile**: 8.1 / Q1(EasyScholar)
-**Publication Date**: 2026-11-04
-**DOI**: [https://doi.org/10.1039/d6sc05793d](https://doi.org/10.1039/d6sc05793d)
-**Relevance Score**: 2.74/10
+**Authors**: Bowen Liu, Shuaitong Liang, Junping Miao, Kai Qian, Mengyao Lv, Yiding Lu et al.
+**Journal/Platform**: Journal of Power Sources
+**SCI Impact Factor / JCR Quartile**: 8.6 / Q1(EasyScholar)
+**Publication Date**: 2026-11-21
+**DOI**: [https://doi.org/10.1016/j.jpowsour.2026.242012](https://doi.org/10.1016/j.jpowsour.2026.242012)
+**Relevance Score**: 5.1/10
 
 ### 1. What problem is it really trying to solve?
 
-The work addresses the performance limitations of polymer composite solid electrolytes, specifically focusing on sluggish lithium-ion conduction and interfacial resistance at ceramic filler-polymer boundaries that hinder their practical implementation.
+The work addresses the performance trade-offs and structural bottlenecks in solid-state electrolytes for metal batteries, specifically targeting ion conduction limitations, structural design, and interface compatibility spanning polymer networks and ceramic scaffolds.
 
 ### 2. What contribution does it claim?
 
-The authors claim to establish comprehensive design principles, elucidate interfacial ion-transport pathways, and provide practical implementation strategies specifically tailored for incorporating one-dimensional architectures into polymer solid electrolytes.
+The authors claim a systematic framework examining electrospun fibrous solid-state electrolytes, focusing on the architectural transition from polymer networks to ceramic scaffolds, alongside the analysis of ceramic filler-matrix interface effects and lithium-ion transport mechanisms.
 
 ### 3. What are its main conclusions?
 
-Based strictly on the available title and metadata, the article concludes that deploying one-dimensional architectures optimizes ion-transport mechanisms and interfacial effects in polymer composite electrolytes; however, the lack of full-text data precludes independent verification of the specific quantitative efficacy or empirical robustness claimed.
+Based strictly on the limited title and metadata provided, specific empirical conclusions cannot be independently verified; the work broadly concludes on the critical role of electrospun fiber architectures and ceramic interface engineering in governing ion conduction pathways for metal batteries.
 
-## 3. Microreactor-Assisted In Situ La-Doped LATP Composite Solid Electrolyte with Enhanced Ionic Conductivity and Interfacial Stability for Quasi-Solid-State Lithium Metal Batteries
+## 4. Built‐In Electric Field Creates Li + Highways With Accelerating and Dissociating Regions for Solid‐State Polymer Electrolytes
 
-**Authors**: Chenyang Long, Fei Liu, Yunsong Ran, Jun Zhao, Hao Wen, Dong Zou et al.
-**Journal/Platform**: ACS Sustainable Chemistry & Engineering
-**SCI Impact Factor / JCR Quartile**: 7.8 / Q1(EasyScholar)
-**Publication Date**: 2026-11-14
-**DOI**: [https://doi.org/10.1021/acssuschemeng.6c06630](https://doi.org/10.1021/acssuschemeng.6c06630)
-**Relevance Score**: 2.72/10
+**Authors**: Tu Ran, Shuhao Ruan, Yawei Li, Xiaofei Yang, Yi Cheng
+**Journal/Platform**: Advanced Functional Materials
+**SCI Impact Factor / JCR Quartile**: 19.9 / Q1(EasyScholar)
+**Publication Date**: 2026-11-20
+**DOI**: [https://doi.org/10.1002/adfm.79758](https://doi.org/10.1002/adfm.79758)
+**Relevance Score**: 3.33/10
 
 ### 1. What problem is it really trying to solve?
 
-The work addresses the high interfacial impedance, poor chemical/electrochemical stability against lithium metal anodes, and limited room-temperature Li+ transport kinetics that fundamentally restrict the practical deployment of NASICON-type Li1+xAlxTi2–x(PO4)3 (LATP) solid electrolytes in quasi-solid-state lithium metal batteries.
+Poly(ethylene oxide)-based solid polymer electrolytes suffer from critically low room-temperature ionic conductivity and low Li-ion transference numbers, driven by inadequate lithium salt dissociation and passive, unassisted Li-ion transport through the polymer matrix.
 
 ### 2. What contribution does it claim?
 
-The authors claim a dual-modification strategy comprising microreactor-assisted synthesis to control LATP crystallization kinetics and particle size, coupled with in situ La3+ doping (substituting Ti sites to yield LALTP with grain-boundary LaPO4 segregation). They further claim the design of a flexible composite electrolyte by dispersing this LALTP into a PVDF matrix, supported by DFT modeling to rationalize enhanced polymer–ceramic interfacial adhesion and lower Li+ migration barriers.
+The authors claim the incorporation of a MoSe2/TiF4 heterojunction filler into a PEO/LiTFSI matrix, claiming this creates an active ion-conducting network where the heterointerface built-in electric field accelerates Li+ drift while Lewis acid-base interactions facilitate LiTFSI dissociation.
 
 ### 3. What are its main conclusions?
 
-The authors conclude that an optimal 0.1 mol La doping level enables an ionic conductivity of 1.38 mS cm⁻¹ and a lithium-ion transference number of 0.75, while the PVDF/LALTP composite stabilizes the lithium interface against dendrite growth. These claims are supported by reported electrochemical data—including 1000 h of symmetric cell cycling at 0.2 mA cm⁻² and long-term cycling in quasi-solid-state cells (93% retention after 2000 cycles at 1C)—though the evidence is explicitly bound to a quasi-solid-state regime rather than an all-solid-state system.
+The authors conclude that the heterojunction design enhances transport properties, reporting a room-temperature conductivity of 1.09 × 10⁻⁴ S cm⁻¹, a transference number of 0.55, and extended symmetric cell stability over 2500 h at 60 °C, alongside functional cycling in LFP and high-nickel NCM811 full cells. Based on density functional theory calculations and electrochemical data, they conclude the internal electric field and Lewis acid-base sites are the primary drivers of the accelerated kinetics and salt dissociation.
 
-## 4. Effect of Limiting Current of Polymer Electrolytes on Peukert Plots of All-Solid Cells with Lithium Metal Anodes
+## 5. Polyanion‐Modulated Vanadium‐Doped Ammonium Iron Phosphate Framework from Spent LiFePO 4 for Lattice Oxygen‐Participated Water Oxidation
 
-**Authors**: Lily A. Gido, Benedict G. Cecilio, Rounak Jana, Jaeyong Lee, Nitash P. Balsara
-**Journal/Platform**: Journal of The Electrochemical Society
-**SCI Impact Factor / JCR Quartile**: 3.7 / Q2(EasyScholar)
-**Publication Date**: 2026-11-13
-**DOI**: [https://doi.org/10.1149/1945-7111/aec204](https://doi.org/10.1149/1945-7111/aec204)
-**Relevance Score**: 2.52/10
+**Authors**: Jiyoung Kim, JeongEun Yoo, Kiyoung Lee
+**Journal/Platform**: Advanced Energy Materials
+**SCI Impact Factor / JCR Quartile**: 26 / Q1(EasyScholar)
+**Publication Date**: 2026-11-22
+**DOI**: [https://doi.org/10.1002/aenm.71855](https://doi.org/10.1002/aenm.71855)
+**Relevance Score**: 1.3/10
 
 ### 1. What problem is it really trying to solve?
 
-Identifying and decoupling the underlying transport mechanisms—specifically differentiating between electrolyte-phase and electrode-phase ion transport limitations—that cause accessible first-cycle capacity loss at increasing current densities in all-solid-state lithium metal batteries.
+Activating and stabilizing the lattice oxygen mechanism (LOM) during the oxygen evolution reaction without causing structural degradation, alongside developing effective upcycling strategies to transform degraded, lithium-deficient spent LiFePO4 into high-performance electrocatalysts.
 
 ### 2. What contribution does it claim?
 
-The authors introduce an all-solid cell configuration utilizing a novel separator made of crosslinked poly(ethylene oxide) swollen with linear poly(pentyl malonate) chains and LiTFSI, and claim a diagnostic methodology using Peukert plots evaluated across varied salt concentrations to define two characteristic transition current densities (iT and iB).
+The authors claim a microwave-assisted upcycling method converting spent LiFePO4 into a lithium-free, vanadium-doped ammonium iron phosphate hydroxide hydrate (S-VAFP). They claim that polyanionic coordination modulates Fe–O covalency and weakens Fe–(O–P) bonds to drive in situ surface amorphization, providing 18O isotope-labeling DEMS and chemical probe data to support an AEM–LOM coupled pathway that delivers 250 mV overpotential at 100 mA cm⁻² and over 1000 h of operation at 1 A cm⁻² in an anion-exchange membrane water electrolyzer.
 
 ### 3. What are its main conclusions?
 
-The characteristic current density iB directly corresponds to the limiting current of the polymer separator, confirming that transport limitations within the electrolyte govern capacity drop-off beyond this threshold; while the authors infer that the lower threshold iT originates from electrode-level transport limitations, this attribution remains a mechanistic suggestion based on elimination rather than directly isolated proof in the provided data.
-
-## 5. Advanced positive electrode design for polymer electrolyte batteries: Maximizing the ionic and electronic transport efficiency
-
-**Authors**: Thomas G. Meyer, Claire Villevieille, Fannie Alloin
-**Journal/Platform**: HAL
-**SCI Impact Factor / JCR Quartile**: 1 / JCR not available(配置表)
-**Publication Date**: 2026-11-16
-**DOI**: None
-**Relevance Score**: 2.38/10
-
-### 1. What problem is it really trying to solve?
-
-The work aims to address poor ionic and electronic percolation and high interfacial resistance within composite positive electrodes for polymer-based solid-state batteries, primarily caused by internal porosity, poor component dispersion (active material sedimentation and electrolyte aggregation), and inadequate electrode-electrolyte adhesion.
-
-### 2. What contribution does it claim?
-
-The authors claim the formulation of a PAN/PVdF blend polymer electrolyte plasticized with an ionic liquid and lithium salt (achieving a reported 2.4 mS cm⁻¹ conductivity at 40 °C), alongside an optimized positive electrode processing methodology combining controlled mixing/drying protocols and temperature-based calendering to minimize porosity and optimize transport pathways.
-
-### 3. What are its main conclusions?
-
-The authors conclude that mitigating component sedimentation and reducing porosity through temperature-based calendering enhances transport efficiency, enabling a full cell to retain 99% capacity after 36 cycles at C/20 and 40 °C. However, from a critical reviewer standpoint, the demonstrated performance is strictly limited to very short-term cycling (36 cycles) at a low operational rate (C/20).
+The authors conclude that polyanion-mediated electronic modulation and structural reorganization of spent iron phosphate precursors can successfully trigger durable lattice oxygen participation, providing a viable blueprint for designing stable, non-noble-metal OER electrocatalysts for high-current-density water splitting.
 
 ## Run Report
 
-**Search window**: 2026-10-17 to 2026-11-16
-**Raw search results**: 99
-**After deduplication**: 98
-**Not previously pushed**: 96
+**Search window**: 2026-10-24 to 2026-11-23
+**Raw search results**: 68
+**After deduplication**: 68
+**Not previously pushed**: 67
 **Recommended in this run**: 5
 
 | Database | API status | Results | Notes |
 | --- | --- | ---: | --- |
-| OpenAlex | Success | 45 | API called successfully，26 successful request(s) |
-| Crossref | Success | 50 | API called successfully，26 successful request(s) |
-| Semantic Scholar | Partial success | 0 | API called，14 successful request(s)，12 failed request(s) |
-| Elsevier Scopus | Success | 4 | API called successfully，26 successful request(s) |
+| OpenAlex | Success | 51 | API called successfully，26 successful request(s) |
+| Crossref | Partial success | 14 | API called，3 successful request(s)，23 failed request(s) |
+| Semantic Scholar | Partial success | 0 | API called，10 successful request(s)，16 failed request(s) |
+| Elsevier Scopus | Success | 3 | API called successfully，26 successful request(s) |
 
 
-**Journal metrics lookup**: Success; queried 81 journals, matched 71 papers. API called，81 successful request(s)，0 failed request(s)；71 paper(s) matched impact factors
+**Journal metrics lookup**: Success; queried 57 journals, matched 53 papers. API called，57 successful request(s)，0 failed request(s)；53 paper(s) matched impact factors
 
 **Gemini API usage**: Success; attempted 5 papers, 5 succeeded, 0 failed, 0 used rule-based fallback; 5 HTTP requests, 0 rate-limit responses. Gemini enabled; successfully analyzed 5 final recommended papers; 5 HTTP requests, 0 rate-limit responses
